@@ -1,0 +1,2485 @@
+<!DOCTYPE html>
+<!-- saved from url=(0111)file:///C:/Users/insti/Downloads/%ED%86%A0%EC%9A%94%EC%9D%BC_%EB%8C%80%EA%B8%B0%EC%98%88%EC%95%BD_Firebase.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦷 토요일 대기 환자 관리</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
+:root {
+  --navy:#1A2B4A; --navy2:#2E4070; --mint:#3ECFBD; --mint-l:#E6F9F7;
+  --c-scheduled:#FFE500; --c-regular:#B8F0C8; --c-other:#B8D4FF;
+  --c-unavail:#FFB8B8; --c-weekday:#DDD0FF; --c-normal:#fff;
+  --gray50:#F7F9FB; --gray100:#EEF1F5; --gray200:#D8DFE8;
+  --gray400:#8FA3BB; --gray600:#4E6178; --gray800:#1E2D3D;
+  --red:#E74C3C; --purple:#8E44AD;
+  --shadow-s:0 1px 4px rgba(26,43,74,.08);
+  --shadow-m:0 4px 16px rgba(26,43,74,.13);
+  --r:10px; --r-s:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--gray50);
+  color:var(--gray800);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HEADER ── */
+.hdr{background:var(--navy);height:52px;display:flex;align-items:center;
+  gap:12px;padding:0 18px;flex-shrink:0;box-shadow:var(--shadow-m);z-index:10}
+.hdr-ico{width:30px;height:30px;background:var(--mint);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hdr-title{color:#fff;font-size:14px;font-weight:700}
+.hdr-sub{color:var(--mint);font-size:10px}
+.hdr-spacer{flex:1}
+.hdr-total{background:var(--mint);color:var(--navy);font-size:11px;
+  font-weight:700;padding:3px 11px;border-radius:20px}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:205px;min-width:205px;background:#fff;
+  border-right:1px solid var(--gray200);display:flex;flex-direction:column;flex-shrink:0}
+.sb-scroll{flex:1;overflow-y:auto}
+.sb-bottom{padding:10px 12px;border-top:1px solid var(--gray200);flex-shrink:0}
+.sb-add-date{width:100%;padding:9px;background:var(--navy);color:#fff;border:none;
+  border-radius:var(--r-s);font-size:12px;font-weight:600;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;justify-content:center;
+  gap:5px;transition:background .15s}
+.sb-add-date:hover{background:var(--navy2)}
+
+/* year group */
+.sb-year{padding:5px 10px;font-size:11px;font-weight:800;color:#fff;
+  background:var(--navy2);display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;letter-spacing:.3px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-year .sb-year-left{display:flex;align-items:center;gap:5px;flex:1}
+.sb-year .arrow{font-size:9px;transition:transform .18s}
+.sb-year.collapsed .arrow{transform:rotate(-90deg)}
+.sb-year-group.hidden{display:none}
+/* month row */
+.sb-month{padding:5px 10px 3px;font-size:10px;font-weight:700;color:var(--gray600);
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;border-top:1px solid var(--gray100);gap:2px}
+.sb-month:first-child{border-top:none}
+.sb-month .arrow{font-size:9px;transition:transform .18s;flex-shrink:0}
+.sb-month.collapsed .arrow{transform:rotate(-90deg)}
+.sb-month-past{color:var(--gray400);background:var(--gray50)}
+.sb-group.hidden{display:none}
+.sb-month-left{display:flex;align-items:center;gap:4px;flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.sb-month-acts{display:none;gap:0;flex-shrink:0}
+.sb-month:hover .sb-month-acts{display:flex}
+.mmb{border:none;background:transparent;cursor:pointer;font-size:10px;
+  color:var(--gray400);padding:1px 4px;border-radius:3px;transition:all .1s;line-height:1.4}
+.mmb.del:hover{color:var(--red);background:#FFE8E8}
+/* date row */
+.date-row{display:flex;align-items:center;width:100%}
+.date-row:hover .date-meta-btns{display:flex}
+.date-meta-btns{display:none;flex-shrink:0}
+.dmb{width:20px;height:28px;border:none;background:transparent;cursor:pointer;
+  font-size:10px;display:flex;align-items:center;justify-content:center;
+  color:var(--gray400);transition:all .1s}
+.dmb.del:hover{color:var(--red);background:#FFF0F0;border-radius:3px}
+.date-btn{flex:1;display:flex;align-items:center;justify-content:space-between;
+  padding:7px 8px 7px 12px;border:none;background:transparent;
+  cursor:pointer;text-align:left;transition:background .1s;gap:4px;min-width:0}
+.date-btn:hover{background:var(--gray50)}
+/* global search in header */
+.hdr-ac-wrap{position:relative}
+.hdr-gsearch{display:flex;align-items:center;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);border-radius:var(--r-s);
+  padding:0 10px;gap:6px;height:30px;transition:all .15s}
+.hdr-gsearch:focus-within{background:rgba(255,255,255,.22);border-color:var(--mint)}
+.hdr-gsearch input{border:none;outline:none;font-size:12px;font-family:inherit;
+  color:#fff;background:transparent;width:140px}
+.hdr-gsearch input::placeholder{color:rgba(255,255,255,.5)}
+.hdr-ac-drop{position:absolute;top:calc(100% + 4px);right:0;width:300px;background:#fff;
+  border:1.5px solid var(--mint);border-radius:var(--r-s);
+  box-shadow:var(--shadow-m);z-index:500;max-height:220px;overflow-y:auto}
+.hdr-ac-drop.hidden{display:none}
+.hdr-ac-item{padding:8px 12px;cursor:pointer;font-size:12px;
+  border-bottom:1px solid var(--gray100);transition:background .1s}
+.hdr-ac-item:last-child{border-bottom:none}
+.hdr-ac-item:hover{background:var(--mint-l)}
+.hdr-ac-name{font-weight:700;color:var(--navy)}
+.hdr-ac-sub{font-size:10.5px;color:var(--gray400)}
+/* global search result page */
+.gs-wrap{flex:1;overflow-y:auto;padding:14px 20px}
+.gs-title{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px}
+.gs-section-hd{font-size:11.5px;font-weight:700;color:var(--gray600);padding:6px 0 5px;
+  border-bottom:2px solid var(--gray200);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.gs-card{background:#fff;border:1px solid var(--gray200);border-radius:var(--r-s);
+  padding:8px 12px;margin-bottom:5px;display:flex;align-items:flex-start;gap:8px;
+  cursor:pointer;transition:border-color .1s}
+.gs-card:hover{border-color:var(--mint);background:var(--mint-l)}
+.gs-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.gs-name{font-weight:700;color:var(--navy);font-size:12.5px}
+.gs-date{font-size:11px;color:var(--gray400)}
+.gs-note{font-size:11px;color:var(--gray600);margin-top:1px}
+.date-btn.active{background:var(--mint-l)}
+.date-btn .dt{font-size:12px;font-weight:500;color:var(--gray800)}
+.date-btn.active .dt{color:#19998F;font-weight:700}
+.date-btn .cnt{font-size:10.5px;font-weight:600;background:var(--gray100);
+  color:var(--gray600);padding:1px 7px;border-radius:10px}
+.date-btn.active .cnt{background:var(--mint);color:var(--navy)}
+.date-btn.past-d .dt{color:var(--gray400)}
+.sb-cancel-btn{display:flex;align-items:center;gap:7px;width:100%;
+  padding:8px 12px;border:none;background:transparent;cursor:pointer;
+  border-top:1px solid var(--gray100);transition:background .1s;margin-top:4px}
+.sb-cancel-btn:hover{background:#FFF4F4}
+.sb-cancel-btn.active{background:#FFECEC}
+.sb-cancel-btn .cn{font-size:12px;font-weight:600;color:var(--red)}
+.sb-cancel-btn .cc{background:#FFD0CF;color:var(--red);font-size:10.5px;
+  font-weight:600;padding:1px 7px;border-radius:10px;margin-left:auto}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── STICKY TOP (fixed header in main) ── */
+.main-top{flex-shrink:0;padding:14px 20px 0;background:var(--gray50)}
+
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.page-title{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.5px;flex:1}
+.page-title .sub{font-size:11px;color:var(--gray400);font-weight:400;margin-left:6px}
+.search-box{display:flex;align-items:center;background:#fff;border:1.5px solid var(--gray200);
+  border-radius:var(--r-s);padding:0 10px;gap:6px;height:34px;transition:border-color .15s}
+.search-box:focus-within{border-color:var(--mint)}
+.search-box input{border:none;outline:none;font-size:12px;font-family:inherit;
+  color:var(--gray800);background:transparent;width:140px}
+.search-box input::placeholder{color:var(--gray400)}
+
+/* ── COLOR BAR + ACTIONS ── */
+.action-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.color-bar{display:flex;align-items:center;gap:5px;background:#fff;
+  border:1px solid var(--gray200);border-radius:var(--r-s);padding:5px 10px}
+.color-bar-label{font-size:10.5px;color:var(--gray400);font-weight:600;margin-right:2px}
+.c-btn{width:22px;height:22px;border-radius:5px;border:2px solid transparent;
+  cursor:pointer;transition:all .12s;position:relative;flex-shrink:0}
+.c-btn:hover{transform:scale(1.2)}
+.c-btn.selected-color{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy)}
+.c-btn-label{font-size:9.5px;white-space:nowrap;color:var(--gray600)}
+
+.sel-info{font-size:11.5px;color:var(--gray600);font-weight:500;
+  background:#fff;border:1px solid var(--gray200);border-radius:var(--r-s);
+  padding:5px 10px;white-space:nowrap}
+.sel-info.active{color:var(--navy);font-weight:700;border-color:var(--mint);background:var(--mint-l)}
+
+.add-btn{height:32px;padding:0 14px;background:var(--navy);color:#fff;border:none;
+  border-radius:var(--r-s);font-size:12px;font-weight:600;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .15s;
+  margin-left:auto}
+.add-btn:hover{background:var(--navy2)}
+
+/* ── STATS ── */
+.stats{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.stat{background:#fff;border:1px solid var(--gray200);border-radius:var(--r-s);
+  padding:8px 12px;min-width:80px}
+.stat .v{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-1px}
+.stat .l{font-size:10px;color:var(--gray400);font-weight:500}
+.stat.hl .v{color:#19998F}
+.stat.red .v{color:var(--red)}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.fil{height:28px;padding:0 11px;border:1.5px solid var(--gray200);background:#fff;
+  border-radius:20px;font-size:11px;font-weight:600;color:var(--gray600);
+  cursor:pointer;transition:all .12s;font-family:inherit;
+  display:flex;align-items:center;gap:4px}
+.fil:hover{border-color:var(--mint);color:#19998F}
+.fil.on{border-color:var(--mint);background:var(--mint);color:var(--navy)}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--gray600)}
+.leg-box{width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+
+/* ── TABLE WRAP — only this scrolls ── */
+.tbl-scroll{flex:1;overflow-y:auto;padding:0 20px 16px}
+.tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:var(--shadow-s);
+  overflow:hidden;border:1px solid var(--gray200)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+thead{background:var(--navy);position:sticky;top:0;z-index:5}
+thead th{color:#fff;font-size:10.5px;font-weight:600;padding:9px 11px;
+  text-align:left;white-space:nowrap}
+thead th:first-child{width:40px;padding-left:14px}
+tbody tr{border-bottom:1px solid var(--gray100);cursor:pointer;transition:filter .08s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{filter:brightness(.96)}
+tbody tr.row-selected{outline:2px solid var(--mint);outline-offset:-2px}
+td{padding:9px 11px;font-size:12.5px;color:var(--gray800);vertical-align:middle}
+td:first-child{padding-left:14px;font-size:11px;font-weight:700;
+  color:var(--gray400);width:40px}
+
+/* name cell — only name+chart get color */
+.name-c{font-weight:700;color:var(--navy);white-space:nowrap;
+  border-radius:4px 0 0 4px;padding-left:8px!important}
+.chart-c{font-size:12px;color:var(--gray600);border-radius:0 4px 4px 0}
+/* separator between colored and uncolored cells */
+.sep-cell{border-left:2px solid var(--gray100)!important}
+
+.phone-c{font-size:12px;color:var(--gray600)}
+.phone-c a{color:inherit;text-decoration:none}
+.phone-c a:hover{color:var(--mint)}
+.appt-badge{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;
+  background:var(--mint-l);color:#19998F;white-space:nowrap}
+.appt-none{font-size:11px;color:var(--gray400)}
+.pri-badge{display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border-radius:50%;font-size:10px;font-weight:800;color:#fff}
+.note-c{font-size:11px;color:var(--gray600);max-width:220px;line-height:1.5}
+.note-warn{color:var(--red);font-weight:600}
+.turn-c{font-size:10.5px;color:var(--purple);font-weight:600;white-space:nowrap}
+
+/* device toggle button */
+.dev-toggle{border:none;border-radius:5px;font-size:10.5px;font-weight:700;
+  padding:2px 8px;cursor:pointer;font-family:inherit;transition:all .15s}
+.dev-toggle.has{background:#845EF7;color:#fff}
+.dev-toggle.none{background:var(--gray100);color:var(--gray400);font-weight:500}
+.dev-toggle:hover{opacity:.8}
+
+/* row actions */
+.row-acts{display:flex;gap:3px;opacity:0;transition:opacity .12s}
+tbody tr:hover .row-acts{opacity:1}
+.icon-btn{width:24px;height:24px;border:1px solid var(--gray200);background:#fff;
+  border-radius:4px;cursor:pointer;font-size:12px;display:flex;align-items:center;
+  justify-content:center;transition:all .12s}
+.icon-btn:hover{background:var(--gray100)}
+.icon-btn.del:hover{background:#FFE8E8;border-color:#ffb3b3;color:var(--red)}
+
+/* divider row */
+.divider-row td{background:var(--gray100);font-size:10.5px;color:var(--gray400);
+  font-weight:700;padding:4px 14px;letter-spacing:.4px}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
+  display:flex;align-items:center;justify-content:center}
+.overlay.hidden{display:none}
+.modal{background:#fff;border-radius:var(--r);box-shadow:0 8px 40px rgba(0,0,0,.25);
+  width:490px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-hdr{background:var(--navy);color:#fff;padding:14px 18px;
+  border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h3{font-size:14px;font-weight:700}
+.modal-close{background:transparent;border:none;color:#fff;
+  font-size:19px;cursor:pointer;padding:0 4px;line-height:1}
+.modal-body{padding:18px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:11px;font-weight:600;color:var(--gray600)}
+.form-group input,.form-group select,.form-group textarea{
+  border:1.5px solid var(--gray200);border-radius:var(--r-s);padding:7px 9px;
+  font-size:12.5px;font-family:inherit;color:var(--gray800);outline:none;
+  transition:border-color .15s;background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--mint)}
+.form-group textarea{resize:vertical;min-height:56px}
+.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.status-opt input{display:none}
+.status-opt label{display:flex;align-items:center;gap:5px;padding:6px 9px;
+  border:1.5px solid var(--gray200);border-radius:var(--r-s);cursor:pointer;
+  font-size:11px;font-weight:500;transition:all .12s}
+.status-opt input:checked+label{border-color:var(--navy);background:var(--navy);color:#fff}
+.sdot{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.12);flex-shrink:0}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;
+  padding:14px 18px;border-top:1px solid var(--gray100)}
+.btn-save{background:var(--navy);color:#fff;border:none;border-radius:var(--r-s);
+  padding:8px 20px;font-size:12.5px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:background .15s}
+.btn-save:hover{background:var(--navy2)}
+.btn-cancel2{background:#fff;color:var(--gray600);border:1.5px solid var(--gray200);
+  border-radius:var(--r-s);padding:7px 16px;font-size:12.5px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .12s}
+.btn-cancel2:hover{border-color:var(--gray400)}
+
+/* autocomplete */
+.ac-wrap{position:relative}
+.ac-drop{position:absolute;left:0;right:0;top:100%;background:#fff;
+  border:1.5px solid var(--mint);border-radius:0 0 var(--r-s) var(--r-s);
+  box-shadow:var(--shadow-m);z-index:300;max-height:170px;overflow-y:auto}
+.ac-drop.hidden{display:none}
+.ac-item{padding:7px 11px;cursor:pointer;font-size:12px;
+  border-bottom:1px solid var(--gray100)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--mint-l)}
+.ac-name{font-weight:600;color:var(--navy)}
+.ac-detail{font-size:10.5px;color:var(--gray400)}
+
+/* date modal */
+.tab-btns{display:flex;gap:5px;margin-bottom:14px}
+.tab-btn{flex:1;padding:7px;border:1.5px solid var(--gray200);background:#fff;
+  border-radius:var(--r-s);font-size:11.5px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:all .12s;color:var(--gray600)}
+.tab-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.sat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;
+  max-height:200px;overflow-y:auto;margin-bottom:10px}
+.sat-item{display:flex;align-items:center;gap:6px;padding:6px 9px;
+  border:1.5px solid var(--gray200);border-radius:var(--r-s);cursor:pointer;
+  font-size:11.5px;font-family:inherit;background:#fff;transition:all .1s}
+.sat-item:hover:not([style*="opacity"]){border-color:var(--mint);background:var(--mint-l)}
+.sat-item input{accent-color:var(--navy)}
+
+/* action buttons in rows */
+.act-btn{border:none;border-radius:5px;font-size:10.5px;font-weight:600;
+  padding:3px 7px;cursor:pointer;font-family:inherit;white-space:nowrap;
+  transition:all .12s;display:inline-flex;align-items:center;gap:2px}
+.act-reset{background:#E8F4FF;color:#1565C0}
+.act-reset:hover{background:#1565C0;color:#fff}
+.act-edit{background:var(--gray100);color:var(--gray600)}
+.act-edit:hover{background:var(--gray200)}
+.act-del{background:#FFF0F0;color:var(--red)}
+.act-del:hover{background:var(--red);color:#fff}
+.act-cancel{background:#FFF3E0;color:#E65100}
+.act-cancel:hover{background:#E65100;color:#fff}
+
+/* back to cancel button */
+.btn-to-cancel{border:none;background:transparent;cursor:pointer;font-size:15px;
+  padding:2px 4px;border-radius:4px;transition:background .12s;color:var(--red);line-height:1}
+.btn-to-cancel:hover{background:#FFE8E8}
+
+/* done row dblclick hint */
+.done-row-hint{font-size:9.5px;color:var(--gray400);display:block;line-height:1.2;margin-top:1px}
+
+/* header add button */
+.hdr-add-btn{background:var(--mint);color:var(--navy);border:none;border-radius:var(--r-s);
+  padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+  white-space:nowrap;transition:all .15s;margin-right:8px;flex-shrink:0}
+.hdr-add-btn:hover{background:#2fb8a8}
+
+/* multi-date calendar in modal */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-nav{border:none;background:var(--gray100);border-radius:5px;width:28px;height:28px;
+  cursor:pointer;font-size:14px;transition:background .12s}
+.cal-nav:hover{background:var(--gray200)}
+.cal-title{font-size:13px;font-weight:700;color:var(--navy)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px}
+.cal-day-hd{font-size:10px;color:var(--gray400);text-align:center;padding:2px 0;font-weight:600}
+.cal-day{border:none;background:transparent;border-radius:5px;padding:5px 2px;
+  font-size:11.5px;cursor:pointer;font-family:inherit;transition:all .12s;text-align:center;width:100%}
+.cal-day:hover:not(:disabled){background:var(--gray100)}
+.cal-day.sat{color:var(--navy);font-weight:600}
+.cal-day.sat:hover{background:var(--mint-l);color:#19998F}
+.cal-day.selected-day{background:var(--mint)!important;color:var(--navy)!important;font-weight:800}
+.cal-day.has-patient{background:#FFF8DC;color:#B8860B;font-weight:700}
+.cal-day.selected-day.has-patient{background:var(--mint)!important;color:var(--navy)!important}
+.cal-day:disabled{color:var(--gray200);cursor:default}
+.cal-day.other-month{color:var(--gray200)}
+.selected-dates{display:flex;flex-wrap:wrap;gap:4px;min-height:24px;margin-top:6px}
+.sel-date-tag{background:var(--mint);color:var(--navy);font-size:10.5px;font-weight:600;
+  padding:2px 7px;border-radius:10px;display:flex;align-items:center;gap:4px}
+.sel-date-tag button{border:none;background:transparent;cursor:pointer;font-size:11px;
+  color:var(--navy);padding:0;line-height:1}
+
+/* turn button group */
+.turn-btns{display:flex;gap:5px;flex-wrap:wrap}
+.turn-btn{border:1.5px solid var(--gray200);background:#fff;border-radius:var(--r-s);
+  padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  color:var(--gray600);transition:all .12s}
+.turn-btn:hover{border-color:var(--mint);color:#19998F}
+.turn-btn.on{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:600;box-shadow:var(--shadow-m);z-index:9999;
+  opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* cancel move modal */
+.move-modal{width:360px}
+.date-list-scroll{max-height:260px;overflow-y:auto;margin-top:8px;border:1.5px solid var(--gray200);border-radius:var(--r-s)}
+.date-list-item{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--gray100);font-size:13px}
+.date-list-item:last-child{border-bottom:none}
+.date-list-item:hover{background:var(--mint-l)}
+.date-list-item .dl-date{font-weight:600;color:var(--navy)}
+.date-list-item .dl-cnt{font-size:11px;color:var(--gray400)}
+.cancel-row-hint{font-size:10.5px;color:var(--gray400);margin-top:3px}
+
+/* cancel page */
+.cancel-hdr-bar{background:var(--red);color:#fff;padding:11px 16px;
+  font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;
+  border-radius:var(--r) var(--r) 0 0}
+
+/* empty */
+.empty{text-align:center;padding:60px;color:var(--gray400)}
+.empty .ico{font-size:38px;margin-bottom:10px}
+.empty .txt{font-size:13.5px}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gray200);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--gray400)}
+</style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBp3ILVui6nDNsitTyEfaW7ve1yoWbKI_g",
+    authDomain: "dental-waitlist-afb21.firebaseapp.com",
+    databaseURL: "https://dental-waitlist-afb21-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "dental-waitlist-afb21",
+    storageBucket: "dental-waitlist-afb21.firebasestorage.app",
+    messagingSenderId: "842888053713",
+    appId: "1:842888053713:web:56c9449d1127880f6616f0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dbRef = ref(db, 'waitlist');
+
+  // Firebase에서 데이터 실시간 수신
+  window._fbReady = false;
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    if(data) {
+      window.DB = data;
+      if(!window._fbReady) {
+        window._fbReady = true;
+        window._onFbReady && window._onFbReady();
+      } else {
+        // 다른 사람이 수정한 경우 UI 갱신
+        if(typeof buildSidebar === 'function') {
+          buildSidebar();
+          if(typeof renderMain === 'function') renderMain();
+        }
+      }
+    } else {
+      // 처음 실행 시 RAW_DATA를 Firebase에 저장
+      set(dbRef, window.RAW_DATA);
+    }
+  });
+
+  // DB 변경시 Firebase에 저장
+  window._saveToFb = function() {
+    set(dbRef, window.DB);
+  };
+</script>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-ico">🦷</div>
+  <div>
+    <div class="hdr-title">토요일 대기 환자 관리</div>
+    <div class="hdr-sub">Saturday Waitlist Manager</div>
+  </div>
+  <div class="hdr-spacer"></div>
+  <button class="hdr-add-btn" onclick="openAddGlobal()">+ 환자 추가</button>
+  <div class="hdr-ac-wrap">
+    <div class="hdr-gsearch">
+      <span style="color:rgba(255,255,255,.6);font-size:13px">🔍</span>
+      <input type="text" id="hdr-search-input" placeholder="전체 환자 검색..." autocomplete="off" oninput="onHdrSearch(this.value)" onkeydown="onHdrSearchKey(event)">
+    </div>
+    <div class="hdr-ac-drop hidden" id="hdr-ac-drop"></div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-scroll" id="sidebar"><div class="sb-year collapsed" onclick="toggleYear(&#39;2025년&#39;)">
+      <span class="sb-year-left">▶ 2025년</span><span class="arrow">▼</span>
+    </div><div class="sb-year-group hidden" data-y="2025년"><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 1월&#39;)">
+        <span class="sb-month-left">📁 1월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 1월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2025년 1월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-10&#39;)">
+            <span class="dt">1/10 (금)</span><span class="cnt">16</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-10&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-10&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-17&#39;)">
+            <span class="dt">1/17 (금)</span><span class="cnt">14</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-17&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-17&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-24&#39;)">
+            <span class="dt">1/24 (금)</span><span class="cnt">22</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-24&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-24&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-31&#39;)">
+            <span class="dt">1/31 (금)</span><span class="cnt">16</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-31&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-31&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 2월&#39;)">
+        <span class="sb-month-left">📁 2월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 2월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2025년 2월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-02-07&#39;)">
+            <span class="dt">2/7 (금)</span><span class="cnt">24</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-02-07&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-02-07&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-02-28&#39;)">
+            <span class="dt">2/28 (금)</span><span class="cnt">20</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-02-28&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-02-28&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 4월&#39;)">
+        <span class="sb-month-left">📁 4월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 4월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2025년 4월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-04-25&#39;)">
+            <span class="dt">4/25 (금)</span><span class="cnt">28</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-04-25&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-04-25&#39;)">🗑️</button>
+          </div>
+        </div></div></div><div class="sb-year " onclick="toggleYear(&#39;2026년&#39;)">
+      <span class="sb-year-left">▶ 2026년</span><span class="arrow">▼</span>
+    </div><div class="sb-year-group " data-y="2026년"><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 3월&#39;)">
+        <span class="sb-month-left">📁 3월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 3월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2026년 3월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-07&#39;)">
+            <span class="dt">3/7 (토)</span><span class="cnt">25</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-07&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-07&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-14&#39;)">
+            <span class="dt">3/14 (토)</span><span class="cnt">26</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-14&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-14&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-21&#39;)">
+            <span class="dt">3/21 (토)</span><span class="cnt">27</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-21&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-21&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 4월&#39;)">
+        <span class="sb-month-left">📁 4월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 4월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2026년 4월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-04-11&#39;)">
+            <span class="dt">4/11 (토)</span><span class="cnt">21</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-04-11&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-04-11&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-04-18&#39;)">
+            <span class="dt">4/18 (토)</span><span class="cnt">25</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-04-18&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-04-18&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 5월&#39;)">
+        <span class="sb-month-left">📁 5월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 5월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group hidden" data-m="2026년 5월"><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-05-02&#39;)">
+            <span class="dt">5/2 (토)</span><span class="cnt">23</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-05-02&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-05-02&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-05-16&#39;)">
+            <span class="dt">5/16 (토)</span><span class="cnt">22</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-05-16&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-05-16&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 6월&#39;)">
+        <span class="sb-month-left">📅 6월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 6월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group " data-m="2026년 6월"><div class="date-row">
+          <button class="date-btn active " onclick="selectDate(&#39;2026-06-13&#39;)">
+            <span class="dt">6/13 (토)</span><span class="cnt">27</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-13&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-13&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-06-20&#39;)">
+            <span class="dt">6/20 (토)</span><span class="cnt">32</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-20&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-20&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-06-27&#39;)">
+            <span class="dt">6/27 (토)</span><span class="cnt">27</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-27&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-27&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 7월&#39;)">
+        <span class="sb-month-left">📅 7월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 7월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group " data-m="2026년 7월"><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-07-04&#39;)">
+            <span class="dt">7/4 (토)</span><span class="cnt">8</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-04&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-04&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-07-11&#39;)">
+            <span class="dt">7/11 (토)</span><span class="cnt">10</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-11&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-11&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-07-25&#39;)">
+            <span class="dt">7/25 (토)</span><span class="cnt">9</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-25&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-25&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 8월&#39;)">
+        <span class="sb-month-left">📅 8월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 8월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group " data-m="2026년 8월"><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-08-22&#39;)">
+            <span class="dt">8/22 (토)</span><span class="cnt">3</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-08-22&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-08-22&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-08-29&#39;)">
+            <span class="dt">8/29 (토)</span><span class="cnt">3</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-08-29&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-08-29&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 9월&#39;)">
+        <span class="sb-month-left">📅 9월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 9월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group " data-m="2026년 9월"><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-09-05&#39;)">
+            <span class="dt">9/5 (토)</span><span class="cnt">1</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-05&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-05&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-09-12&#39;)">
+            <span class="dt">9/12 (토)</span><span class="cnt">1</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-12&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-12&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-09-19&#39;)">
+            <span class="dt">9/19 (토)</span><span class="cnt">1</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-19&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-19&#39;)">🗑️</button>
+          </div>
+        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 11월&#39;)">
+        <span class="sb-month-left">📅 11월</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 11월&#39;)">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group " data-m="2026년 11월"><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-11-07&#39;)">
+            <span class="dt">11/7 (토)</span><span class="cnt">1</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-11-07&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-11-07&#39;)">🗑️</button>
+          </div>
+        </div><div class="date-row">
+          <button class="date-btn  " onclick="selectDate(&#39;2026-11-28&#39;)">
+            <span class="dt">11/28 (토)</span><span class="cnt">1</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-11-28&#39;)">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-11-28&#39;)">🗑️</button>
+          </div>
+        </div></div></div><button class="sb-cancel-btn " onclick="selectDate(&#39;cancel&#39;)" style="margin-top:4px">
+    <span class="cn">⚠️ 당일취소</span><span class="cc">6</span>
+  </button></div>
+    <div class="sb-bottom">
+      <button class="sb-add-date" onclick="openDateModal()">📅 날짜 추가</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main-wrap">
+    <div class="main-top">
+      <div class="toolbar">
+        <div class="page-title">6/13 (토)<span>2026년 6월</span></div>
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" placeholder="이름·차트·전화 검색..." value="" oninput="onSearch(this.value)">
+        </div>
+      </div>
+      <div class="action-bar">
+        <div class="color-bar">
+          <span class="color-bar-label">색상</span>
+          
+    <button class="c-btn " title="기본" style="background:#ffffff;border:1.5px solid #ccc" onclick="onColorClick(&#39;normal&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">기본</span>
+  
+    <button class="c-btn " title="예약해드림" style="background:#FFE500;" onclick="onColorClick(&#39;scheduled&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">예약해드림</span>
+  
+    <button class="c-btn " title="잘오는사람" style="background:#B8F0C8;" onclick="onColorClick(&#39;regular&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">잘오는사람</span>
+  
+    <button class="c-btn " title="다른날예약" style="background:#B8D4FF;" onclick="onColorClick(&#39;other_day&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">다른날예약</span>
+  
+    <button class="c-btn " title="이날안됨" style="background:#FFB8B8;" onclick="onColorClick(&#39;unavailable&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">이날안됨</span>
+  
+    <button class="c-btn " title="평일내원" style="background:#DDD0FF;" onclick="onColorClick(&#39;weekday&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">평일내원</span>
+  
+    <button class="c-btn " title="당일취소" style="background:#FF6B6B;" onclick="onColorClick(&#39;cancel&#39;)"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">당일취소</span>
+  
+        </div>
+        <span class="sel-info">환자 행을 클릭해서 선택 후 색상 적용</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="v">27</div><div class="l">전체</div></div>
+        <div class="stat"><div class="v">13</div><div class="l">대기</div></div>
+        <div class="stat" style="border-left:3px solid #FFE500"><div class="v">4</div><div class="l">예약해드림</div></div>
+        <div class="stat" style="border-left:3px solid #B8D4FF"><div class="v">8</div><div class="l">다른날예약</div></div>
+        <div class="stat" style="border-left:3px solid #FFB8B8"><div class="v">0</div><div class="l">이날안됨</div></div>
+        <div class="stat" style="border-left:3px solid #DDD0FF"><div class="v">2</div><div class="l">평일내원</div></div>
+        <div class="stat" style="border-left:3px solid #FF6B6B"><div class="v">0</div><div class="l">당일취소</div></div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>이름</th><th>차트번호</th>
+            <th>전화번호</th><th>다음예약</th><th>장치</th><th>우선순위</th>
+            <th>내원텀</th>
+            <th>비고</th><th></th>
+          </tr></thead>
+          <tbody id="tbody"><tr class="" onclick="selectRow(0)">
+      <td>1</td>
+      <td class="name-c" style="background:#ffffff">조장하</td>
+      <td class="chart-c" style="background:#ffffff">1912046</td>
+      <td class="phone-c"><a href="tel:010-6729-2852" onclick="event.stopPropagation()">010-6729-2852</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(0)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">4M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(0)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(0)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(0)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(6)">
+      <td>7</td>
+      <td class="name-c" style="background:#ffffff">우현정</td>
+      <td class="chart-c" style="background:#ffffff">2412023</td>
+      <td class="phone-c"><a href="tel:010-8412-1011" onclick="event.stopPropagation()">010-8412-1011</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(6)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">3M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(6)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(6)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(6)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(7)">
+      <td>8</td>
+      <td class="name-c" style="background:#ffffff">지창윤</td>
+      <td class="chart-c" style="background:#ffffff">2405026</td>
+      <td class="phone-c"><a href="tel:010-5005-4624" onclick="event.stopPropagation()">010-5005-4624</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(7)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(7)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(7)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(7)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(12)">
+      <td>13</td>
+      <td class="name-c" style="background:#ffffff">이채윤</td>
+      <td class="chart-c" style="background:#ffffff">2508026</td>
+      <td class="phone-c"><a href="tel:010-4500-0691" onclick="event.stopPropagation()">010-4500-0691</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(12)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c ">이제 평일에 시간을 뺄 수가 없어요</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(12)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(12)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(12)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(16)">
+      <td>17</td>
+      <td class="name-c" style="background:#ffffff">송가빈</td>
+      <td class="chart-c" style="background:#ffffff">2410001</td>
+      <td class="phone-c"><a href="tel:010-8622-1554" onclick="event.stopPropagation()">010-8622-1554</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(16)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(16)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(16)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(16)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(17)">
+      <td>18</td>
+      <td class="name-c" style="background:#ffffff">이민선</td>
+      <td class="chart-c" style="background:#ffffff">2505041</td>
+      <td class="phone-c"><a href="tel:010-5022-8656" onclick="event.stopPropagation()">010-5022-8656</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(17)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(17)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(17)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(17)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(19)">
+      <td>20</td>
+      <td class="name-c" style="background:#ffffff">윤소라</td>
+      <td class="chart-c" style="background:#ffffff">2408013</td>
+      <td class="phone-c"><a href="tel:010-8805-1759" onclick="event.stopPropagation()">010-8805-1759</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(19)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(19)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(19)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(19)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(20)">
+      <td>21</td>
+      <td class="name-c" style="background:#ffffff">박새롬</td>
+      <td class="chart-c" style="background:#ffffff">2401015</td>
+      <td class="phone-c"><a href="tel:010-6881-7164" onclick="event.stopPropagation()">010-6881-7164</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(20)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c ">토요일 넣어줄 사람 진짜 없으면..</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(20)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(20)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(20)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(21)">
+      <td>22</td>
+      <td class="name-c" style="background:#ffffff">권나현</td>
+      <td class="chart-c" style="background:#ffffff">2209018</td>
+      <td class="phone-c"><a href="tel:010-3913-2985" onclick="event.stopPropagation()">010-3913-2985</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(21)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(21)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(21)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(21)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(22)">
+      <td>23</td>
+      <td class="name-c" style="background:#ffffff">정윤애</td>
+      <td class="chart-c" style="background:#ffffff">2509031</td>
+      <td class="phone-c"><a href="tel:010-6625-3091" onclick="event.stopPropagation()">010-6625-3091</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(22)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(22)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(22)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(22)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(23)">
+      <td>24</td>
+      <td class="name-c" style="background:#ffffff">김다은</td>
+      <td class="chart-c" style="background:#ffffff">1812037</td>
+      <td class="phone-c"><a href="tel:010-8529-4825" onclick="event.stopPropagation()">010-8529-4825</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(23)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c ">이제 토요일 밖에 안돼요</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(23)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(23)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(23)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(25)">
+      <td>26</td>
+      <td class="name-c" style="background:#ffffff">김도연</td>
+      <td class="chart-c" style="background:#ffffff">2503002</td>
+      <td class="phone-c"><a href="tel:010-4713-8453" onclick="event.stopPropagation()">010-4713-8453</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(25)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c"></td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(25)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(25)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(25)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(26)">
+      <td>27</td>
+      <td class="name-c" style="background:#ffffff">양연주</td>
+      <td class="chart-c" style="background:#ffffff">1908039</td>
+      <td class="phone-c"><a href="tel:010-4692-5118" onclick="event.stopPropagation()">010-4692-5118</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(26)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c"></td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(26)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(26)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(26)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="divider-row"><td colspan="10">── 예약/처리 완료 ── (이름 더블클릭 → 대기로 되돌리기)</td></tr><tr class="" onclick="selectRow(1)">
+      <td>2</td>
+      <td class="name-c" style="background:#FFE500">김지민</td>
+      <td class="chart-c" style="background:#FFE500">2205020</td>
+      <td class="phone-c"><a href="tel:010-7768-1003" onclick="event.stopPropagation()">010-7768-1003</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(1)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">3M</td>
+      <td class="note-c ">이제 입사해서 당분간 토요일밖에 안됨</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(1)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(1)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(1)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(1)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(2)">
+      <td>3</td>
+      <td class="name-c" style="background:#B8D4FF">안세영</td>
+      <td class="chart-c" style="background:#B8D4FF">2411006</td>
+      <td class="phone-c"><a href="tel:010-5042-6619" onclick="event.stopPropagation()">010-5042-6619</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(2)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">3M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(2)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(2)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(2)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(2)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(3)">
+      <td>4</td>
+      <td class="name-c" style="background:#FFE500">유금주</td>
+      <td class="chart-c" style="background:#FFE500">2306016</td>
+      <td class="phone-c"><a href="tel:010-4620-4959" onclick="event.stopPropagation()">010-4620-4959</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(3)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">3M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(3)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(3)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(3)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(3)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(4)">
+      <td>5</td>
+      <td class="name-c" style="background:#FFE500">이예원</td>
+      <td class="chart-c" style="background:#FFE500">1906037</td>
+      <td class="phone-c"><a href="tel:010-7423-2008" onclick="event.stopPropagation()">010-7423-2008</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(4)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">4M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(4)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(4)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(4)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(4)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(5)">
+      <td>6</td>
+      <td class="name-c" style="background:#B8D4FF">김진형</td>
+      <td class="chart-c" style="background:#B8D4FF">2310010</td>
+      <td class="phone-c"><a href="tel:010-8376-5113" onclick="event.stopPropagation()">010-8376-5113</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(5)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(5)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(5)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(5)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(5)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(8)">
+      <td>9</td>
+      <td class="name-c" style="background:#B8D4FF">김미미</td>
+      <td class="chart-c" style="background:#B8D4FF">2511030</td>
+      <td class="phone-c"><a href="tel:010-9964-4725" onclick="event.stopPropagation()">010-9964-4725</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(8)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(8)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(8)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(8)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(8)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(9)">
+      <td>10</td>
+      <td class="name-c" style="background:#B8D4FF">이민지</td>
+      <td class="chart-c" style="background:#B8D4FF">2506032</td>
+      <td class="phone-c"><a href="tel:010-3121-7280" onclick="event.stopPropagation()">010-3121-7280</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(9)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(9)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(9)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(9)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(9)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(10)">
+      <td>11</td>
+      <td class="name-c" style="background:#B8D4FF">박현석</td>
+      <td class="chart-c" style="background:#B8D4FF">1910038</td>
+      <td class="phone-c"><a href="tel:010-7343-7067" onclick="event.stopPropagation()">010-7343-7067</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(10)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(10)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(10)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(10)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(10)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(11)">
+      <td>12</td>
+      <td class="name-c" style="background:#B8D4FF">이재영</td>
+      <td class="chart-c" style="background:#B8D4FF">2408023</td>
+      <td class="phone-c"><a href="tel:010-6800-3063" onclick="event.stopPropagation()">010-6800-3063</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(11)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">2M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(11)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(11)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(11)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(11)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(13)">
+      <td>14</td>
+      <td class="name-c" style="background:#B8D4FF">조현규</td>
+      <td class="chart-c" style="background:#B8D4FF">2602014</td>
+      <td class="phone-c"><a href="tel:010-3708-5929" onclick="event.stopPropagation()">010-3708-5929</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(13)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c ">평일에 연차내기 어려워서 토요일 원함</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(13)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(13)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(13)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(13)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(14)">
+      <td>15</td>
+      <td class="name-c" style="background:#FFE500">임지현</td>
+      <td class="chart-c" style="background:#FFE500">2602035</td>
+      <td class="phone-c"><a href="tel:010-5244-2034" onclick="event.stopPropagation()">010-5244-2034</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(14)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c ">4/25 취소</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(14)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(14)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(14)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(14)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(15)">
+      <td>16</td>
+      <td class="name-c" style="background:#DDD0FF">은비</td>
+      <td class="chart-c" style="background:#DDD0FF">2001016</td>
+      <td class="phone-c"><a href="tel:010-9228-4586" onclick="event.stopPropagation()">010-9228-4586</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(15)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c ">수요일 OFF</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(15)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(15)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(15)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(15)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(18)">
+      <td>19</td>
+      <td class="name-c" style="background:#B8D4FF">한선하</td>
+      <td class="chart-c" style="background:#B8D4FF">2601004</td>
+      <td class="phone-c"><a href="tel:010-3251-9147" onclick="event.stopPropagation()">010-3251-9147</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(18)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c">1M</td>
+      <td class="note-c "></td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(18)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(18)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(18)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(18)">⚠️취소</button>
+        </div>
+      </td>
+    </tr><tr class="" onclick="selectRow(24)">
+      <td>25</td>
+      <td class="name-c" style="background:#DDD0FF">한수빈</td>
+      <td class="chart-c" style="background:#DDD0FF">2208029</td>
+      <td class="phone-c"><a href="tel:010-4923-5667" onclick="event.stopPropagation()">010-4923-5667</a></td>
+      <td><span class="appt-none">-</span></td>
+      <td>
+        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(24)">
+          장치O
+        </button>
+      </td>
+      <td></td>
+      <td class="turn-c"></td>
+      <td class="note-c ">6/8일 평일로 예약</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(24)">↩대기</button>
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(24)">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(24)">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(24)">⚠️취소</button>
+        </div>
+      </td>
+    </tr></tbody>
+        </table>
+      </div>
+    </div></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- PATIENT MODAL -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3 id="modalTitle">환자 추가</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>이름 *</label>
+          <div class="ac-wrap">
+            <input type="text" id="f-name" placeholder="이름 입력" autocomplete="off" oninput="onNameInput(this.value)" onkeydown="onNameKey(event)">
+            <div class="ac-drop hidden" id="ac-drop"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>차트번호</label>
+          <input type="text" id="f-chart" placeholder="자동입력">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>전화번호</label>
+          <input type="text" id="f-phone" placeholder="자동입력">
+        </div>
+        <div class="form-group">
+          <label>다음예약</label>
+          <input type="text" id="f-appt" placeholder="예: 6/13(금) 5시">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>장치여부</label>
+          <select id="f-device">
+            <option value="O">장치 O (기본)</option>
+            <option value="X">장치 없음 (예외)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>우선순위</label>
+          <select id="f-priority">
+            <option value="">없음</option>
+            <option value="1">1순위</option>
+            <option value="2">2순위</option>
+            <option value="3">3순위</option>
+            <option value="4">4순위</option>
+            <option value="5">5순위</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>내원텀</label>
+          <div class="turn-btns" id="turnBtns">
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;&#39;)">없음</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;1M&#39;)">1M</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;2M&#39;)">2M</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;3M&#39;)">3M</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;4M&#39;)">4M</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;6M&#39;)">6M</button>
+            <button type="button" class="turn-btn" onclick="setTurn(&#39;1Y&#39;)">1Y</button>
+          </div>
+          <input type="hidden" id="f-turn">
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <!-- 멀티 날짜 선택 (헤더에서 열 때만 표시) -->
+      <div id="multi-date-section" style="display:none">
+        <div class="form-group" style="margin-bottom:6px">
+          <label>추가할 날짜 선택 <span style="color:var(--gray400);font-weight:400">(토요일 여러 개 가능)</span></label>
+        </div>
+        <div class="cal-header">
+          <button class="cal-nav" onclick="calPrev()">◀</button>
+          <span class="cal-title" id="calTitle"></span>
+          <button class="cal-nav" onclick="calNext()">▶</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div style="font-size:10.5px;color:var(--gray400);margin-bottom:5px">선택된 날짜:</div>
+        <div class="selected-dates" id="selectedDates"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>비고</label>
+          <textarea id="f-note" placeholder="특이사항"></textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>색상 구분</label>
+        <div class="status-grid">
+          <div class="status-opt"><input type="radio" name="st" id="s-normal" value="normal" checked=""><label for="s-normal"><span class="sdot" style="background:#fff;border-color:#ccc"></span>기본</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-scheduled" value="scheduled"><label for="s-scheduled"><span class="sdot" style="background:var(--c-scheduled)"></span>예약해드림</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-regular" value="regular"><label for="s-regular"><span class="sdot" style="background:var(--c-regular)"></span>잘오는사람</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-other_day" value="other_day"><label for="s-other_day"><span class="sdot" style="background:var(--c-other)"></span>다른날예약</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-unavailable" value="unavailable"><label for="s-unavailable"><span class="sdot" style="background:var(--c-unavail)"></span>이날안됨</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-weekday" value="weekday"><label for="s-weekday"><span class="sdot" style="background:var(--c-weekday)"></span>평일내원</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-cancel" value="cancel"><label for="s-cancel"><span class="sdot" style="background:#FF6B6B"></span>당일취소 →명단이동</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel2" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="savePatient()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE TO DATE MODAL -->
+<div class="overlay hidden" id="moveOverlay">
+  <div class="modal move-modal">
+    <div class="modal-hdr" style="background:var(--red)">
+      <h3 id="moveTitle">날짜로 이동</h3>
+      <button class="modal-close" onclick="closeMoveModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--gray600);margin-bottom:4px">이동할 날짜를 선택하세요. 선택한 날짜의 대기 목록에 <b style="color:#19998F">예약해드림</b> 상태로 추가됩니다.</div>
+      <div class="date-list-scroll" id="moveList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel2" onclick="closeMoveModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATE MODAL -->
+<div class="overlay hidden" id="dateOverlay">
+  <div class="modal" style="width:390px">
+    <div class="modal-hdr">
+      <h3>날짜 추가</h3>
+      <button class="modal-close" onclick="closeDateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-btns">
+        <button class="tab-btn on" id="tab-single" onclick="switchTab(&#39;single&#39;)">📅 날짜 1개</button>
+        <button class="tab-btn" id="tab-month" onclick="switchTab(&#39;month&#39;)">📆 달 전체 추가</button>
+      </div>
+      <div id="panel-single">
+        <div class="form-group">
+          <label>날짜 선택</label>
+          <input type="date" id="new-date-input">
+        </div>
+      </div>
+      <div id="panel-month" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>연도</label>
+            <select id="bulk-year"></select>
+          </div>
+          <div class="form-group">
+            <label>월</label>
+            <select id="bulk-month" onchange="buildSatGrid()">
+              <option value="1">1월</option><option value="2">2월</option>
+              <option value="3">3월</option><option value="4">4월</option>
+              <option value="5">5월</option><option value="6">6월</option>
+              <option value="7">7월</option><option value="8">8월</option>
+              <option value="9">9월</option><option value="10">10월</option>
+              <option value="11">11월</option><option value="12">12월</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:7px"><label>추가할 토요일 선택</label></div>
+        <div class="sat-grid" id="sat-grid"></div>
+        <div style="display:flex;gap:7px;margin-top:6px">
+          <button class="btn-cancel2" style="flex:1;font-size:11px;padding:6px" onclick="selAllSats(true)">전체선택</button>
+          <button class="btn-cancel2" style="flex:1;font-size:11px;padding:6px" onclick="selAllSats(false)">전체해제</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel2" onclick="closeDateModal()">취소</button>
+      <button class="btn-save" onclick="addNewDate()">추가</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.RAW_DATA = {"dates":[{"date_str":"2025-01-10","patients":[{"order":1,"name":"이지은","chart":"2504048","phone":"010-5529-0647","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"1월에는 토요일 밖에 안돼요","status":"unavailable"},{"order":4,"name":"고민정","chart":"2009027","phone":"010-8959-5029","appt":"1/8 3시30분","device":"","priority":"","turn":"","note":"대기 환자분들 토요일 넣어드리고 자리남으면","status":"scheduled"},{"order":5,"name":"이상민","chart":"2508020","phone":"010-2518-8988","appt":"1/15 5시30분","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":6,"name":"서소연","chart":"2202038","phone":"010-3524-0270","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":8,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"이유정","chart":"2508010","phone":"010-4500-0610","appt":"1/30 5시","device":"X","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"조은정","chart":"2502001","phone":"010-9800-2019","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일","status":"scheduled"},{"order":11,"name":"조은채","chart":"2506020","phone":"010-7134-2526","appt":"","device":"","priority":"","turn":"","note":"12/13 당일 취소","status":"scheduled"},{"order":12,"name":"김새영","chart":"2405006","phone":"010-2339-1979","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":13,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"12/20 취소, 맨마지막 순서로 안내","status":"unavailable"},{"order":14,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"12/20 취소, 맨마지막 순서로 안내","status":"unavailable"},{"order":15,"name":"한수빈","chart":"2208029","phone":"010-4923-5667","appt":"","device":"","priority":"","turn":"","note":"1/10 또는 1/24 가능, 비지니스카톡채널","status":"unavailable"},{"order":16,"name":"송정아","chart":"2503026","phone":"010-3688-7842","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"}]},{"date_str":"2025-01-17","patients":[{"order":1,"name":"이지은","chart":"2504048","phone":"010-5529-0647","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"1월에는 토요일 밖에 안돼요","status":"unavailable"},{"order":4,"name":"이상민","chart":"2508020","phone":"010-2518-8988","appt":"1/15 5시30분","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"서소연","chart":"2202038","phone":"010-3524-0270","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"조은정","chart":"2502001","phone":"010-9800-2019","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일","status":"scheduled"},{"order":8,"name":"이유정","chart":"2508010","phone":"010-4500-0610","appt":"1/30 5시","device":"X","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"조은채","chart":"2506020","phone":"010-7134-2526","appt":"","device":"X","priority":"","turn":"","note":"12/13 당일 취소","status":"scheduled"},{"order":10,"name":"김미애","chart":"2307005","phone":"010-4785-4580","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일, 10일 빼고","status":"scheduled"},{"order":11,"name":"김새영","chart":"2405006","phone":"010-2339-1979","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":12,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"12/20 취소","status":"scheduled"},{"order":13,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"12/20 취소, 맨마지막 순서로 안내","status":"scheduled"},{"order":14,"name":"송정아","chart":"2503026","phone":"010-3688-7842","appt":"","device":"","priority":"","turn":"","note":"해외에 있음","status":"unavailable"}]},{"date_str":"2025-01-24","patients":[{"order":1,"name":"이지은","chart":"2504048","phone":"010-5529-0647","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"이상민","chart":"2508020","phone":"010-2518-8988","appt":"1/15 5시30분","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"서소연","chart":"2202038","phone":"010-3524-0270","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"조은정","chart":"2502001","phone":"010-9800-2019","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일","status":"scheduled"},{"order":8,"name":"조은채","chart":"2506020","phone":"010-7134-2526","appt":"","device":"X","priority":"","turn":"","note":"12/13 당일 취소","status":"scheduled"},{"order":9,"name":"김미애","chart":"2307005","phone":"010-4785-4580","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일, 10일 빼고","status":"scheduled"},{"order":10,"name":"김새영","chart":"2405006","phone":"010-2339-1979","appt":"","device":"","priority":"","turn":"","note":"가능할 때 연락주시기로","status":"unavailable"},{"order":11,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"1","turn":"","note":"이 날만 가능(미리연락주기)","status":"unavailable"},{"order":12,"name":"문다영","chart":"1808021","phone":"010-4159-0629","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"12/20 취소","status":"scheduled"},{"order":14,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"12/20 취소, 맨마지막 순서로 안내","status":"scheduled"},{"order":15,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"1월에 방문 어려워요","status":"unavailable"},{"order":16,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"한수빈","chart":"2208029","phone":"010-4923-5667","appt":"","device":"","priority":"","turn":"","note":"1/10 또는 1/24 가능, 비지니스카톡채널","status":"scheduled"},{"order":18,"name":"송정아","chart":"2503026","phone":"010-3688-7842","appt":"","device":"","priority":"","turn":"","note":"해외에 있음","status":"unavailable"},{"order":19,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"24일만 가능","status":"scheduled"},{"order":20,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"1월에는 토요일 밖에 안돼요","status":"scheduled"},{"order":21,"name":"장은영","chart":"2105004","phone":"010-2742-3760","appt":"01/23 11:30","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":22,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"1/17일당일취소, 맨마지막 순서로 안내, 전화안받음","status":"unavailable"}]},{"date_str":"2025-01-31","patients":[{"order":1,"name":"서소연","chart":"2202038","phone":"010-3524-0270","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"김새영","chart":"2405006","phone":"010-2339-1979","appt":"","device":"","priority":"","turn":"","note":"가능할때 연락주시기로","status":"unavailable"},{"order":4,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"조은정","chart":"2502001","phone":"010-9800-2019","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일","status":"scheduled"},{"order":6,"name":"조은채","chart":"2506020","phone":"010-7134-2526","appt":"","device":"X","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"김미애","chart":"2307005","phone":"010-4785-4580","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일, 10일 빼고","status":"scheduled"},{"order":8,"name":"문다영","chart":"1808021","phone":"010-4159-0629","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"12/20 취소","status":"scheduled"},{"order":10,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"12/20 취소, 맨마지막 순서로 안내","status":"scheduled"},{"order":11,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"1월에 방문 어려워요","status":"unavailable"},{"order":12,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"송정아","chart":"2503026","phone":"010-3688-7842","appt":"","device":"","priority":"","turn":"","note":"해외에 있음","status":"normal"},{"order":14,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"1월에는 토요일 밖에 안돼요","status":"scheduled"},{"order":15,"name":"조장하","chart":"1912046","phone":"010-6729-2852","appt":"","device":"","priority":"","turn":"","note":"전화기가 꺼져있음","status":"scheduled"},{"order":16,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"1/17일당일취소, 맨마지막 순서로 안내","status":"unavailable"}]},{"date_str":"2025-02-07","patients":[{"order":1,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"금요일까지만 연락주세요","status":"scheduled"},{"order":2,"name":"김지영","chart":"2007009","phone":"010-2966-4248","appt":"","device":"X","priority":"","turn":"","note":"","status":"unavailable"},{"order":3,"name":"박채림","chart":"2403007","phone":"010-9159-6104","appt":"","device":"","priority":"","turn":"","note":"금요일까지 연락주세요","status":"scheduled"},{"order":4,"name":"김혜림","chart":"2301039","phone":"010-3460-2409","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":5,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"오윤지","chart":"2408036","phone":"010-9945-1451","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"우현정","chart":"2412023","phone":"010-8412-1011","appt":"","device":"","priority":"1","turn":"","note":"전화안받음","status":"scheduled"},{"order":8,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"2/28로 예약함","status":"scheduled"},{"order":10,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"2/7 취소","status":"unavailable"},{"order":12,"name":"조장하","chart":"1912046","phone":"010-6729-2852","appt":"","device":"","priority":"","turn":"","note":"전화기가 꺼져있음","status":"scheduled"},{"order":13,"name":"구고은","chart":"2303016","phone":"010-3472-1571","appt":"","device":"","priority":"3","turn":"","note":"1/31 취소","status":"scheduled"},{"order":14,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"금요일까지만 연락주세요","status":"scheduled"},{"order":15,"name":"유보윤","chart":"2308019","phone":"010-4724-9603","appt":"","device":"","priority":"","turn":"","note":"전화안받음","status":"unavailable"},{"order":16,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":18,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"1M splint","status":"scheduled"},{"order":19,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":20,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":21,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"1M splint, 2/7 취소 했는데 한달체크라 최대한 약속잡아줘야함","status":"unavailable"},{"order":22,"name":"이민지B","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":23,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"1/27 취소","status":"unavailable"},{"order":24,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"}]},{"date_str":"2025-02-28","patients":[{"order":1,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"금요일까지만 연락주세요","status":"scheduled"},{"order":2,"name":"김지영","chart":"2007009","phone":"010-2966-4248","appt":"","device":"X","priority":"","turn":"","note":"진료 안봐도 될 것 같아요","status":"unavailable"},{"order":3,"name":"박채림","chart":"2403007","phone":"010-9159-6104","appt":"","device":"","priority":"","turn":"","note":"금요일까지 연락주세요","status":"scheduled"},{"order":4,"name":"김혜림","chart":"2301039","phone":"010-3460-2409","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":5,"name":"유보윤","chart":"2308019","phone":"010-4724-9603","appt":"","device":"","priority":"","turn":"","note":"전화안받음","status":"unavailable"},{"order":6,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":8,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"1M splint","status":"scheduled"},{"order":9,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"1M splint, 2/7 취소 했는데 한달체크라 최대한 약속잡아줘야함","status":"unavailable"},{"order":12,"name":"이민지B","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"1/27 취소","status":"unavailable"},{"order":14,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":15,"name":"성윤정","chart":"2408029","phone":"010-2871-0252","appt":"","device":"","priority":"","turn":"","note":"1/17 취소","status":"scheduled"},{"order":16,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"2/28 취소","status":"unavailable"},{"order":18,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":19,"name":"김주영","chart":"2406010","phone":"010-9758-5849","appt":"","device":"","priority":"","turn":"","note":"카투사/금토일 외박","status":"normal"},{"order":20,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"normal"}]},{"date_str":"2025-04-25","patients":[{"order":1,"name":"송수영","chart":"2210004","phone":"010-4108-6116","appt":"","device":"","priority":"","turn":"","note":"문자 전화 다 안받으심","status":"unavailable"},{"order":2,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"최은혜","chart":"1706049","phone":"010-9150-4715","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"장연지","chart":"2512018","phone":"010-2545-9856","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"윤영은","chart":"2101003","phone":"010-5878-7901","appt":"","device":"","priority":"","turn":"","note":"4/17일(금) 원하셔서 그날로 옮겨드림","status":"scheduled"},{"order":8,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":12,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":15,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":16,"name":"석지은","chart":"2601039","phone":"010-3238-7365","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"지방에서","status":"normal"},{"order":18,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"12:30분,1시만가능","status":"scheduled"},{"order":19,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"4/18 or 25 중 출장 가능성","status":"scheduled"},{"order":20,"name":"김하은","chart":"2109019","phone":"010-4547-0115","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":21,"name":"임종찬","chart":"2111001","phone":"010-3212-8197","appt":"","device":"","priority":"","turn":"","note":"원래 토요일 자리","status":"scheduled"},{"order":22,"name":"김태윤","chart":"2603025","phone":"010-4086-3145","appt":"","device":"","priority":"","turn":"","note":"학생/원주에서 내원","status":"scheduled"},{"order":23,"name":"김주영","chart":"2406010","phone":"010-9758-5849","appt":"","device":"","priority":"","turn":"","note":"카투사/금토일 외박","status":"scheduled"},{"order":24,"name":"김승희","chart":"1706058","phone":"010-3173-0481","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":25,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":26,"name":"임지현","chart":"2602035","phone":"010-5244-2034","appt":"","device":"","priority":"","turn":"","note":"이날만 가능","status":"scheduled"},{"order":27,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":28,"name":"송현지","chart":"2601037","phone":"010-5570-2473","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"}]},{"date_str":"2026-03-07","patients":[{"order":1,"name":"최유진","chart":"2502021","phone":"010-2334-9611","appt":"","device":"","priority":"","turn":"","note":"1Y 방사선","status":"unavailable"},{"order":2,"name":"김혜림","chart":"2301039","phone":"010-3460-2409","appt":"","device":"","priority":"","turn":"","note":"6월까지 내원 어려움","status":"unavailable"},{"order":3,"name":"유보윤","chart":"2308019","phone":"010-4724-9603","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"유금주","chart":"2306016","phone":"010-4620-4959","appt":"","device":"","priority":"","turn":"","note":"전원꺼져있음(2/28일)","status":"unavailable"},{"order":5,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"1","turn":"","note":"","status":"scheduled"},{"order":6,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"2","turn":"","note":"전화연결안됨(3/3)","status":"unavailable"},{"order":7,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":8,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"3월부터 토요일만 가능해요","status":"scheduled"},{"order":9,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"3","turn":"","note":"","status":"scheduled"},{"order":11,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"2/28 취소","status":"unavailable"},{"order":12,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"4","turn":"","note":"3월 중으로는 내원어려움","status":"unavailable"},{"order":13,"name":"이환희","chart":"2304005","phone":"010-8586-9533","appt":"","device":"","priority":"5","turn":"","note":"","status":"scheduled"},{"order":14,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"1M splint, 최대한 약속잡아줘야함","status":"scheduled"},{"order":15,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":16,"name":"윤후","chart":"2602013","phone":"010-2182-3972","appt":"","device":"X","priority":"","turn":"","note":"1M ck","status":"unavailable"},{"order":17,"name":"강희환","chart":"2505023","phone":"010-9266-9190","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":18,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"독감으로 2/7 취소","status":"scheduled"},{"order":19,"name":"구덕한","chart":"1711033","phone":"010-4171-0870","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":20,"name":"유재희","chart":"2602006","phone":"010-4994-1991","appt":"","device":"X","priority":"","turn":"","note":"","status":"unavailable"},{"order":21,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":22,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"scheduled"},{"order":23,"name":"김주영","chart":"2406010","phone":"010-9758-5849","appt":"","device":"","priority":"","turn":"","note":"카투사/금토일 외박","status":"unavailable"},{"order":24,"name":"강규빈","chart":"2502032","phone":"010-8668-2840","appt":"","device":"","priority":"","turn":"","note":"학교때문에 토요일만 가능, 3/7 또는 3/21","status":"scheduled"},{"order":25,"name":"이예원","chart":"1906037","phone":"010-7423-2008","appt":"","device":"","priority":"","turn":"","note":"이제 토요일 밖에 안돼요","status":"scheduled"}]},{"date_str":"2026-03-14","patients":[{"order":1,"name":"최유진","chart":"2502021","phone":"010-2334-9611","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"유금주","chart":"2306016","phone":"010-4620-4959","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"3월부터 토요일만 가능해요","status":"scheduled"},{"order":7,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일 다음번엔 단호하게 거절","status":"scheduled"},{"order":8,"name":"이지은B","chart":"2504048","phone":"010-5529-0647","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":11,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":12,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"3월에 내원 어려움","status":"unavailable"},{"order":13,"name":"이환희","chart":"2304005","phone":"010-8586-9533","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":15,"name":"윤후","chart":"2602013","phone":"010-2182-3972","appt":"","device":"X","priority":"","turn":"","note":"1M ck","status":"unavailable"},{"order":16,"name":"강희환","chart":"2505023","phone":"010-9266-9190","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":17,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"독감으로 2/7 취소","status":"scheduled"},{"order":18,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":19,"name":"구덕한","chart":"1711033","phone":"010-4171-0870","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":20,"name":"유재희","chart":"2602006","phone":"010-4994-1991","appt":"3/11(수)3:30","device":"X","priority":"","turn":"","note":"3/11일도 전화안받고 노쇼","status":"unavailable"},{"order":21,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":22,"name":"문주빈","chart":"2601042","phone":"010-6414-9635","appt":"3/12(목) 5시","device":"","priority":"","turn":"","note":"1M 장치체크","status":"normal"},{"order":23,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"1M splint, 최대한 약속잡아줘야함","status":"scheduled"},{"order":24,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"scheduled"},{"order":25,"name":"김진형","chart":"2310010","phone":"010-8376-5113","appt":"","device":"","priority":"","turn":"","note":"3월부터 토요일만 가능해요","status":"scheduled"},{"order":26,"name":"이예원","chart":"1906037","phone":"010-7423-2008","appt":"","device":"","priority":"","turn":"","note":"이제 토요일 밖에 안돼요","status":"scheduled"}]},{"date_str":"2026-03-21","patients":[{"order":1,"name":"최유진","chart":"2502021","phone":"010-2334-9611","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"유금주","chart":"2306016","phone":"010-4620-4959","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"3월부터 토요일만 가능해요","status":"scheduled"},{"order":7,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"","device":"","priority":"","turn":"","note":"이번에만 토요일","status":"scheduled"},{"order":8,"name":"이지은B","chart":"2504048","phone":"010-5529-0647","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":12,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":13,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"3월 중으로는 내원어려움","status":"unavailable"},{"order":15,"name":"이환희","chart":"2304005","phone":"010-8586-9533","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":16,"name":"윤후","chart":"2602013","phone":"010-2182-3972","appt":"","device":"X","priority":"","turn":"","note":"내원 원하지 않아요","status":"unavailable"},{"order":17,"name":"강희환","chart":"2505023","phone":"010-9266-9190","appt":"","device":"","priority":"","turn":"","note":"회사 너무 바빠서 다음에 연락주시기로","status":"unavailable"},{"order":18,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"독감으로 2/7 취소","status":"scheduled"},{"order":19,"name":"구덕한","chart":"1711033","phone":"010-4171-0870","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":20,"name":"유재희","chart":"2602006","phone":"010-4994-1991","appt":"3/11(수)3:30","device":"X","priority":"","turn":"","note":"3/11일도 전화안받고 노쇼","status":"unavailable"},{"order":21,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":22,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"1M splint, 최대한 약속잡아줘야함","status":"scheduled"},{"order":23,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"scheduled"},{"order":24,"name":"김진형","chart":"2310010","phone":"010-8376-5113","appt":"","device":"","priority":"","turn":"","note":"3월부터 토요일만 가능해요","status":"scheduled"},{"order":25,"name":"강규빈","chart":"2502032","phone":"010-8668-2840","appt":"","device":"","priority":"","turn":"","note":"학교때문에 토요일만 가능","status":"scheduled"},{"order":26,"name":"이예원","chart":"1906037","phone":"010-7423-2008","appt":"","device":"","priority":"","turn":"","note":"이제 토요일 밖에 안돼요","status":"scheduled"},{"order":27,"name":"구고은","chart":"2303016","phone":"010-3472-1571","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"}]},{"date_str":"2026-04-11","patients":[{"order":1,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"장연지","chart":"2512018","phone":"010-2545-9856","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"오윤지","chart":"2408036","phone":"010-9945-1451","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"","note":"휴진전에 연락해서 취소자리 안나오니 평일로 예약잡기","status":"scheduled"},{"order":5,"name":"윤영은","chart":"2101003","phone":"010-5878-7901","appt":"","device":"","priority":"","turn":"","note":"4/17일(금) 원하셔서 그날로 옮겨드림","status":"scheduled"},{"order":6,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":8,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":12,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":14,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"12:30분,1시만가능","status":"scheduled"},{"order":15,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"이 날만 확실히 가능","status":"scheduled"},{"order":16,"name":"김하은","chart":"2109019","phone":"010-4547-0115","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"임종찬","chart":"2111001","phone":"010-3212-8197","appt":"","device":"","priority":"","turn":"","note":"원래 토요일 자리","status":"scheduled"},{"order":18,"name":"김주영","chart":"2406010","phone":"010-9758-5849","appt":"","device":"","priority":"","turn":"","note":"카투사/금토일 외박","status":"scheduled"},{"order":19,"name":"김승희","chart":"1706058","phone":"010-3173-0481","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":20,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":21,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"}]},{"date_str":"2026-04-18","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"김혜선B","chart":"2406021","phone":"010-8809-6527","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"최은혜","chart":"1706049","phone":"010-9150-4715","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"장연지","chart":"2512018","phone":"010-2545-9856","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"오윤지","chart":"2408036","phone":"010-9945-1451","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":6,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":7,"name":"윤영은","chart":"2101003","phone":"010-5878-7901","appt":"","device":"","priority":"","turn":"","note":"4/17일(금) 원하셔서 그날로 옮겨드림","status":"scheduled"},{"order":8,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":10,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":12,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":13,"name":"김단비","chart":"2412011","phone":"010-2910-1091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":15,"name":"석지은","chart":"2601039","phone":"010-3238-7365","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":16,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":17,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"12:30분,1시만가능","status":"scheduled"},{"order":18,"name":"한수현","chart":"2512027","phone":"010-8723-0446","appt":"","device":"","priority":"","turn":"","note":"4/18 or 25 중 출장 가능성","status":"scheduled"},{"order":19,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"4/18 or 5/16만 가능","status":"scheduled"},{"order":20,"name":"김하은","chart":"2109019","phone":"010-4547-0115","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":21,"name":"임종찬","chart":"2111001","phone":"010-3212-8197","appt":"","device":"","priority":"","turn":"","note":"원래 토요일 자리","status":"scheduled"},{"order":22,"name":"김주영","chart":"2406010","phone":"010-9758-5849","appt":"","device":"","priority":"","turn":"","note":"카투사/금토일 외박","status":"scheduled"},{"order":23,"name":"김승희","chart":"1706058","phone":"010-3173-0481","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":24,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":25,"name":"송현지","chart":"2601037","phone":"010-5570-2473","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"}]},{"date_str":"2026-05-02","patients":[{"order":1,"name":"최은혜","chart":"1706049","phone":"010-9150-4715","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":2,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"스케쥴제","status":"scheduled"},{"order":3,"name":"박채림","chart":"2403007","phone":"010-9159-6104","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"평일스케쥴 확인 후 연락주시기로","status":"unavailable"},{"order":6,"name":"박새롬","chart":"2401015","phone":"010-6881-7164","appt":"","device":"","priority":"","turn":"","note":"5월에는 평일이 안될거같아요","status":"scheduled"},{"order":7,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":8,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":9,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"scheduled"},{"order":10,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"5/14 5:30분","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"석명주","chart":"2211032","phone":"010-2400-9781","appt":"","device":"","priority":"","turn":"","note":"스케쥴조정이 확실하지 않아서 이번만","status":"scheduled"},{"order":12,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":13,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"이수정C","chart":"2506024","phone":"010-3401-0516","appt":"","device":"","priority":"","turn":"","note":"부산에서","status":"scheduled"},{"order":15,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":16,"name":"박미리","chart":"2503027","phone":"010-4120-8102","appt":"","device":"","priority":"","turn":"","note":"문자 읽씹","status":"unavailable"},{"order":17,"name":"김하은","chart":"2109019","phone":"010-4547-0115","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":18,"name":"김승희","chart":"1706058","phone":"010-3173-0481","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":19,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":20,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":21,"name":"임지현","chart":"2602035","phone":"010-5244-2034","appt":"","device":"","priority":"","turn":"","note":"4/25 취소","status":"unavailable"},{"order":22,"name":"정상일","chart":"1707055","phone":"010-5042-8246","appt":"6월20일 10시","device":"","priority":"","turn":"","note":"4/25 취소","status":"unavailable"},{"order":23,"name":"장미효","chart":"2106039","phone":"010-7570-2620","appt":"","device":"","priority":"","turn":"","note":"평일에오시기로함","status":"weekday"}]},{"date_str":"2026-05-16","patients":[{"order":1,"name":"조장하","chart":"1912046","phone":"010-6729-2852","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"박채림","chart":"2403007","phone":"010-9159-6104","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":5,"name":"박수민","chart":"2204025","phone":"010-9579-3031","appt":"","device":"","priority":"","turn":"","note":"5/13일 평일에오기로함","status":"weekday"},{"order":6,"name":"장영은","chart":"2510002","phone":"010-6876-1366","appt":"5/22 11:30분","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":7,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":8,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":9,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"입사한지 얼마 안되서 토요일","status":"scheduled"},{"order":10,"name":"김진형","chart":"2310010","phone":"010-8376-5113","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":11,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"5/14 5:30분","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":12,"name":"이유정","chart":"2508010","phone":"010-4500-0610","appt":"","device":"","priority":"","turn":"","note":"6/13은안됨, 평일에 되는날 연락드릴게요","status":"scheduled"},{"order":13,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"","status":"unavailable"},{"order":14,"name":"석명주","chart":"2211032","phone":"010-2400-9781","appt":"","device":"","priority":"","turn":"","note":"스케쥴조정 확실하지 않아서 이번만","status":"other_day"},{"order":15,"name":"명희경","chart":"2410013","phone":"010-9049-9737","appt":"","device":"","priority":"","turn":"","note":"5/16만 가능, 이번만 토요일","status":"scheduled"},{"order":16,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":18,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":19,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":20,"name":"이채윤","chart":"2508026","phone":"010-4500-0691","appt":"","device":"","priority":"","turn":"","note":"이제 평일에 시간을 뺄 수가 없어요","status":"normal"},{"order":21,"name":"김현경","chart":"2510006","phone":"010-3841-7409","appt":"","device":"","priority":"","turn":"","note":"4/18 or 5/16만 가능","status":"other_day"},{"order":22,"name":"임지현","chart":"2602035","phone":"010-5244-2034","appt":"","device":"","priority":"","turn":"","note":"4/25 취소","status":"other_day"}]},{"date_str":"2026-06-13","patients":[{"order":1,"name":"조장하","chart":"1912046","phone":"010-6729-2852","appt":"","device":"","priority":"","turn":"4M","note":"","status":"normal"},{"order":2,"name":"김지민","chart":"2205020","phone":"010-7768-1003","appt":"","device":"","priority":"","turn":"3M","note":"이제 입사해서 당분간 토요일밖에 안됨","status":"scheduled"},{"order":3,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"","turn":"3M","note":"","status":"other_day"},{"order":4,"name":"유금주","chart":"2306016","phone":"010-4620-4959","appt":"","device":"","priority":"","turn":"3M","note":"","status":"scheduled"},{"order":5,"name":"이예원","chart":"1906037","phone":"010-7423-2008","appt":"","device":"","priority":"","turn":"4M","note":"","status":"scheduled"},{"order":6,"name":"김진형","chart":"2310010","phone":"010-8376-5113","appt":"","device":"","priority":"","turn":"2M","note":"","status":"other_day"},{"order":7,"name":"우현정","chart":"2412023","phone":"010-8412-1011","appt":"","device":"","priority":"","turn":"3M","note":"","status":"normal"},{"order":8,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"2M","note":"","status":"normal"},{"order":9,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"1M","note":"","status":"other_day"},{"order":10,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"1M","note":"","status":"other_day"},{"order":11,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"1M","note":"","status":"other_day"},{"order":12,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"2M","note":"","status":"other_day"},{"order":13,"name":"이채윤","chart":"2508026","phone":"010-4500-0691","appt":"","device":"","priority":"","turn":"1M","note":"이제 평일에 시간을 뺄 수가 없어요","status":"normal"},{"order":14,"name":"조현규","chart":"2602014","phone":"010-3708-5929","appt":"","device":"","priority":"","turn":"1M","note":"평일에 연차내기 어려워서 토요일 원함","status":"other_day"},{"order":15,"name":"임지현","chart":"2602035","phone":"010-5244-2034","appt":"","device":"","priority":"","turn":"1M","note":"4/25 취소","status":"scheduled"},{"order":16,"name":"은비","chart":"2001016","phone":"010-9228-4586","appt":"","device":"","priority":"","turn":"1M","note":"수요일 OFF","status":"weekday"},{"order":17,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"2M","note":"","status":"normal"},{"order":18,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"1M","note":"","status":"normal"},{"order":19,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"1M","note":"","status":"other_day"},{"order":20,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"2M","note":"","status":"normal"},{"order":21,"name":"박새롬","chart":"2401015","phone":"010-6881-7164","appt":"","device":"","priority":"","turn":"2M","note":"토요일 넣어줄 사람 진짜 없으면..","status":"normal"},{"order":22,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"1M","note":"","status":"normal"},{"order":23,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"1M","note":"","status":"normal"},{"order":24,"name":"김다은","chart":"1812037","phone":"010-8529-4825","appt":"","device":"","priority":"","turn":"1M","note":"이제 토요일 밖에 안돼요","status":"normal"},{"order":25,"name":"한수빈","chart":"2208029","phone":"010-4923-5667","appt":"","device":"","priority":"","turn":"","note":"6/8일 평일로 예약","status":"weekday"},{"order":26,"name":"김도연","chart":"2503002","phone":"010-4713-8453","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":27,"name":"양연주","chart":"1908039","phone":"010-4692-5118","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-06-20","patients":[{"order":1,"name":"조장하","chart":"1912046","phone":"010-6729-2852","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"김지민","chart":"2205020","phone":"010-7768-1003","appt":"","device":"","priority":"","turn":"","note":"이제 입사해서 당분간 토요일밖에 안됨","status":"other_day"},{"order":3,"name":"유금주","chart":"2306016","phone":"010-4620-4959","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":4,"name":"이예원","chart":"1906037","phone":"010-7423-2008","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":5,"name":"김진형","chart":"2310010","phone":"010-8376-5113","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":6,"name":"우현정","chart":"2412023","phone":"010-8412-1011","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":7,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":8,"name":"이유정","chart":"2508010","phone":"010-4500-0610","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":9,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":10,"name":"최유진","chart":"2502021","phone":"010-2334-9611","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":11,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":12,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":13,"name":"박현석","chart":"1910038","phone":"010-7343-7067","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":15,"name":"이채윤","chart":"2508026","phone":"010-4500-0691","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":16,"name":"조현규","chart":"2602014","phone":"010-3708-5929","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":17,"name":"은비","chart":"2001016","phone":"010-9228-4586","appt":"","device":"","priority":"","turn":"","note":"수요일 OFF","status":"weekday"},{"order":18,"name":"송가빈","chart":"2410001","phone":"010-8622-1554","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":19,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":20,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":21,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"6/27은 확실히 됨","status":"other_day"},{"order":22,"name":"박새롬","chart":"2401015","phone":"010-6881-7164","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":23,"name":"김미수","chart":"2605001","phone":"010-3292-4797","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":24,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":25,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":26,"name":"김다은","chart":"1812037","phone":"010-8529-4825","appt":"","device":"","priority":"","turn":"1M","note":"이제 토요일 밖에 안돼요","status":"normal"},{"order":27,"name":"한수빈","chart":"2208029","phone":"010-4923-5667","appt":"","device":"","priority":"","turn":"","note":"6/8일 평일로 예약","status":"weekday"},{"order":28,"name":"김도연","chart":"2503002","phone":"010-4713-8453","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":29,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":30,"name":"이호인","chart":"2511024","phone":"010-8808-4551","appt":"","device":"","priority":"","turn":"","note":"이직해서 평일에 안됨","status":"normal"},{"order":31,"name":"장은영","chart":"2105004","phone":"010-2742-3760","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":32,"name":"양연주","chart":"1908039","phone":"010-4692-5118","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-06-27","patients":[{"order":1,"name":"김지민","chart":"2205020","phone":"010-7768-1003","appt":"","device":"","priority":"","turn":"","note":"이제 입사해서 당분간 토요일밖에 안됨","status":"other_day"},{"order":2,"name":"안세영","chart":"2411006","phone":"010-5042-6619","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":3,"name":"이유정","chart":"2508010","phone":"010-4500-0610","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":4,"name":"지창윤","chart":"2405026","phone":"010-5005-4624","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"최유진","chart":"2502021","phone":"010-2334-9611","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":6,"name":"김수연","chart":"2602004","phone":"010-8914-7565","appt":"","device":"","priority":"","turn":"","note":"6/27만 가능","status":"other_day"},{"order":7,"name":"전승수","chart":"2210025","phone":"010-9656-6221","appt":"","device":"","priority":"","turn":"","note":"6/27만 가능","status":"scheduled"},{"order":8,"name":"이재영","chart":"2408023","phone":"010-6800-3063","appt":"","device":"","priority":"","turn":"","note":"","status":"other_day"},{"order":9,"name":"이채윤","chart":"2508026","phone":"010-4500-0691","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":10,"name":"조현규","chart":"2602014","phone":"010-3708-5929","appt":"","device":"","priority":"","turn":"","note":"평일에 연차내기 어려워서 토요일 원함","status":"other_day"},{"order":11,"name":"은비","chart":"2001016","phone":"010-9228-4586","appt":"","device":"","priority":"","turn":"","note":"수요일 OFF","status":"weekday"},{"order":12,"name":"이민선","chart":"2505041","phone":"010-5022-8656","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":13,"name":"한선하","chart":"2601004","phone":"010-3251-9147","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":14,"name":"장은애","chart":"2504007","phone":"010-2603-8812","appt":"","device":"","priority":"","turn":"","note":"6/27은 확실히 됨","status":"scheduled"},{"order":15,"name":"박새롬","chart":"2401015","phone":"010-6881-7164","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":16,"name":"권나현","chart":"2209018","phone":"010-3913-2985","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":17,"name":"정윤애","chart":"2509031","phone":"010-6625-3091","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":18,"name":"김다은","chart":"1812037","phone":"010-8529-4825","appt":"","device":"","priority":"","turn":"1M","note":"이제 토요일 밖에 안돼요","status":"normal"},{"order":19,"name":"한수빈","chart":"2208029","phone":"010-4923-5667","appt":"","device":"","priority":"","turn":"","note":"6/8일 평일로 예약","status":"weekday"},{"order":20,"name":"김도연","chart":"2503002","phone":"010-4713-8453","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":21,"name":"김미미","chart":"2511030","phone":"010-9964-4725","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":22,"name":"윤소라","chart":"2408013","phone":"010-8805-1759","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":23,"name":"조병준","chart":"2506030","phone":"010-9725-0926","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":24,"name":"이민지","chart":"2506032","phone":"010-3121-7280","appt":"","device":"","priority":"","turn":"","note":"","status":"scheduled"},{"order":25,"name":"강승지","chart":"2510024","phone":"010-7741-7762","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":26,"name":"이호인","chart":"2511024","phone":"010-8808-4551","appt":"","device":"","priority":"","turn":"","note":"이직해서 평일에 안됨","status":"normal"},{"order":27,"name":"양연주","chart":"1908039","phone":"010-4692-5118","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-07-04","patients":[{"order":1,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":4,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"조은희","chart":"2505040","phone":"010-5027-2382","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":6,"name":"조병준","chart":"2506030","phone":"010-9725-0926","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":7,"name":"이호인","chart":"2511024","phone":"010-8808-4551","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":8,"name":"강승지","chart":"2510024","phone":"010-7741-7762","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-07-11","patients":[{"order":1,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":4,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":6,"name":"조은희","chart":"2505040","phone":"010-5027-2382","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":7,"name":"조병준","chart":"2506030","phone":"010-9725-0926","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":8,"name":"이호인","chart":"2511024","phone":"010-8808-4551","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":9,"name":"강승지","chart":"2510024","phone":"010-7741-7762","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":10,"name":"양연주","chart":"1908039","phone":"010-4692-5118","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-07-25","patients":[{"order":1,"name":"김지혜","chart":"1811025","phone":"010-2053-8277","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"이설연","chart":"1901007","phone":"010-7723-0477","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"이나래","chart":"1909050","phone":"010-5195-4582","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":4,"name":"서지현","chart":"2408030","phone":"010-6240-9098","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":5,"name":"장태환","chart":"2206003","phone":"010-7791-3917","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":6,"name":"조은희","chart":"2505040","phone":"010-5027-2382","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":7,"name":"강승지","chart":"2510024","phone":"010-7741-7762","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":8,"name":"이호인","chart":"2511024","phone":"010-8808-4551","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":9,"name":"양연주","chart":"1908039","phone":"010-4692-5118","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-08-22","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"김안다","chart":"2210002","phone":"010-8001-1403","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"이주영","chart":"2004025","phone":"010-6707-0510","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-08-29","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":2,"name":"김안다","chart":"2210002","phone":"010-8001-1403","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"},{"order":3,"name":"이주영","chart":"2004025","phone":"010-6707-0510","appt":"","device":"X","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-09-05","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-09-12","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-09-19","patients":[{"order":1,"name":"정수빈B","chart":"2301038","phone":"010-3545-6322","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-11-07","patients":[{"order":1,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]},{"date_str":"2026-11-28","patients":[{"order":1,"name":"한채린","chart":"2402014","phone":"010-4450-8711","appt":"","device":"","priority":"","turn":"","note":"","status":"normal"}]}],"cancelList":[{"order":1,"name":"구고은","chart":"2303016","phone":"010-3472-1571","note":"3/21 X, 4/25 당일취소"},{"order":2,"name":"유보윤","chart":"2308019","phone":"010-4724-9603","note":"3/7 당일취소, 3/21일약속 전날 취소"},{"order":3,"name":"조은채","chart":"1712038","phone":"010-5208-5225","note":"노쇼 / 기숙사에 있어서 못가요"},{"order":4,"name":"강규빈","chart":"2502032","phone":"010-8668-2840","note":"취소빌런"},{"order":5,"name":"김하은","chart":"2308027","phone":"010-3547-2858","note":"경상남도/당일취소/연락시 미리"},{"order":6,"name":"송현지","chart":"2601037","phone":"010-5570-2473","note":"4/18일 당일 취소"}]};;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const TODAY = new Date().toISOString().slice(0,10);
+let DB = JSON.parse(JSON.stringify(window.RAW_DATA));
+let curDate = null;
+let selectedIdx = null;   // 선택된 환자 row index
+let selectedColor = null; // 위에서 선택한 색상
+let editingIdx = null;    // null=추가, number=수정, -999=취소명단추가
+let collapsed = new Set();
+let searchText = '';
+let dateTab = 'single';
+
+// 색상 정의
+const COLORS = {
+  normal:     { bg:'#ffffff', label:'기본' },
+  scheduled:  { bg:'#FFE500', label:'예약해드림' },
+  regular:    { bg:'#B8F0C8', label:'잘오는사람' },
+  other_day:  { bg:'#B8D4FF', label:'다른날예약' },
+  unavailable:{ bg:'#FFB8B8', label:'이날안됨' },
+  weekday:    { bg:'#DDD0FF', label:'평일내원' },
+  cancel:     { bg:'#FF6B6B', label:'당일취소' },
+};
+// 예약 완료 상태 (아래로 이동)
+const DONE_STATUS = new Set(['scheduled','other_day','weekday']);
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(ds){
+  const d=new Date(ds+'T00:00:00');
+  const days=['일','월','화','수','목','금','토'];
+  return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+}
+function monthKey(ds){ const d=new Date(ds+'T00:00:00'); return `${d.getFullYear()}년 ${d.getMonth()+1}월`; }
+function isPast(ds){ return ds < TODAY; }
+
+function buildLookup(){
+  const m={};
+  DB.dates.forEach(d=>d.patients.forEach(p=>{
+    if(!p.name||!p.chart) return;
+    const k=p.name.trim();
+    if(!m[k]) m[k]={name:p.name,chart:p.chart,phone:p.phone};
+    else{ if(!m[k].chart&&p.chart)m[k].chart=p.chart; if(!m[k].phone&&p.phone)m[k].phone=p.phone; }
+  }));
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+}
+let lookup = buildLookup();
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function buildSidebar(){
+  const sb = document.getElementById('sidebar');
+  const total = DB.dates.reduce((s,d)=>s+d.patients.length,0);
+
+  const years={};
+  DB.dates.forEach(d=>{
+    const yr=new Date(d.date_str+'T00:00:00').getFullYear()+'년';
+    const mk=monthKey(d.date_str);
+    if(!years[yr])years[yr]={};
+    if(!years[yr][mk])years[yr][mk]=[];
+    years[yr][mk].push(d);
+  });
+  let html='';
+  Object.entries(years).forEach(([yr,months])=>{
+    const isYrCol=collapsed.has('Y:'+yr);
+    html+=`<div class="sb-year ${isYrCol?'collapsed':''}" onclick="toggleYear('${yr}')">
+      <span class="sb-year-left">▶ ${yr}</span><span class="arrow">▼</span>
+    </div><div class="sb-year-group ${isYrCol?'hidden':''}" data-y="${yr}">`;
+    Object.entries(months).forEach(([mk,dates])=>{
+      const allPast=dates.every(d=>isPast(d.date_str));
+      const isMCol=collapsed.has('M:'+mk);
+      const safeM=mk.replace(/'/g,"\\'");
+      html+=`<div class="sb-month ${allPast?'sb-month-past':''} ${isMCol?'collapsed':''}" onclick="toggleMonth('${safeM}')">
+        <span class="sb-month-left">${allPast?'📁':'📅'} ${mk.replace(/\d{4}년 /,'')}</span>
+        <span class="sb-month-acts" onclick="event.stopPropagation()">
+          <button class="mmb del" title="이 달 삭제" onclick="delMonth('${safeM}')">🗑️</button>
+        </span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="sb-group ${isMCol?'hidden':''}" data-m="${mk}">`;
+      dates.forEach(d=>{
+        const active=curDate===d.date_str,past=isPast(d.date_str);
+        html+=`<div class="date-row">
+          <button class="date-btn ${active?'active':''} ${past?'past-d':''}" onclick="selectDate('${d.date_str}')">
+            <span class="dt">${fmtDate(d.date_str)}</span><span class="cnt">${d.patients.length}</span>
+          </button>
+          <div class="date-meta-btns">
+            <button class="dmb" title="날짜 수정" onclick="editDateStr('${d.date_str}')">✏️</button>
+            <button class="dmb del" title="삭제" onclick="delDateEntry('${d.date_str}')">🗑️</button>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`<button class="sb-cancel-btn ${curDate==='cancel'?'active':''}" onclick="selectDate('cancel')" style="margin-top:4px">
+    <span class="cn">⚠️ 당일취소</span><span class="cc">${DB.cancelList.length}</span>
+  </button>`;
+  sb.innerHTML=html;
+}
+function toggleYear(yr){
+  const k='Y:'+yr; if(collapsed.has(k))collapsed.delete(k); else collapsed.add(k); buildSidebar();
+}
+function toggleMonth(mk){
+  const k='M:'+mk; if(collapsed.has(k))collapsed.delete(k); else collapsed.add(k); buildSidebar();
+}
+function initCollapse(){
+  const months={};
+  DB.dates.forEach(d=>{ const mk=monthKey(d.date_str); if(!months[mk])months[mk]=true; if(!isPast(d.date_str))months[mk]=false; });
+  Object.entries(months).forEach(([mk,allPast])=>{ if(allPast)collapsed.add('M:'+mk); });
+  const years={};
+  DB.dates.forEach(d=>{ const yr=new Date(d.date_str+'T00:00:00').getFullYear()+'년'; if(!years[yr])years[yr]=true; if(!isPast(d.date_str))years[yr]=false; });
+  Object.entries(years).forEach(([yr,allPast])=>{ if(allPast)collapsed.add('Y:'+yr); });
+}
+function editDateStr(oldDs){
+  const newDs=prompt(`날짜 수정 (현재: ${fmtDate(oldDs)})\nYYYY-MM-DD 형식으로 입력`,oldDs);
+  if(!newDs||newDs===oldDs)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(newDs)){alert('형식: YYYY-MM-DD');return;}
+  if(DB.dates.find(d=>d.date_str===newDs)){alert('이미 있는 날짜');return;}
+  const d=DB.dates.find(d=>d.date_str===oldDs); if(!d)return;
+  d.date_str=newDs;
+  DB.dates.sort((a,b)=>a.date_str.localeCompare(b.date_str));
+  if(curDate===oldDs)curDate=newDs; window._saveToFb&&window._saveToFb(); buildSidebar(); renderMain();
+}
+function delDateEntry(ds){
+  const d=DB.dates.find(x=>x.date_str===ds); if(!d)return;
+  if(!confirm(`${fmtDate(ds)} (${d.patients.length}명) 삭제할까요?`))return;
+  DB.dates=DB.dates.filter(x=>x.date_str!==ds); if(curDate===ds){curDate=null;document.getElementById('main-wrap').innerHTML=`<div class="empty"><div class="ico">📅</div><div class="txt">날짜를 선택하세요</div></div>`;}
+  buildSidebar();
+}
+function delMonth(mk){
+  const cnt=DB.dates.filter(d=>monthKey(d.date_str)===mk).length;
+  if(!confirm(`${mk} 전체 (${cnt}개 날짜) 삭제할까요?`))return;
+  const had=DB.dates.some(d=>monthKey(d.date_str)===mk&&d.date_str===curDate);
+  DB.dates=DB.dates.filter(d=>monthKey(d.date_str)!==mk); if(had){curDate=null;document.getElementById('main-wrap').innerHTML=`<div class="empty"><div class="ico">📅</div><div class="txt">날짜를 선택하세요</div></div>`;}
+  buildSidebar();
+}
+
+function selectDate(ds){ curDate=ds; selectedIdx=null; selectedColor=null; searchText=''; buildSidebar(); renderMain(); }
+
+// ─── RENDER MAIN ─────────────────────────────────────────────────────────────
+function renderMain(){
+  const wrap = document.getElementById('main-wrap');
+  if(!curDate){ wrap.innerHTML=`<div class="empty"><div class="ico">📅</div><div class="txt">왼쪽에서 날짜를 선택하세요</div></div>`; return; }
+  if(curDate==='cancel'){ renderCancel(wrap); return; }
+
+  const dd = DB.dates.find(d=>d.date_str===curDate);
+  if(!dd){ wrap.innerHTML=''; return; }
+
+  const all = dd.patients;
+  const hasTurn = all.some(p=>p.turn);
+
+  // 정렬: 미예약 먼저, 예약완료 나중
+  let pts = [...all];
+  if(searchText){ const s=searchText.toLowerCase(); pts=pts.filter(p=>p.name.toLowerCase().includes(s)||p.chart.includes(s)||p.phone.replace(/-/g,'').includes(s.replace(/-/g,''))||p.note.toLowerCase().includes(s)); }
+  pts.sort((a,b)=>{
+    const aD=DONE_STATUS.has(a.status||'normal'), bD=DONE_STATUS.has(b.status||'normal');
+    if(aD!==bD) return aD?1:-1;
+    return (a.order||0)-(b.order||0);
+  });
+
+  const waitingCnt = all.filter(p=>!DONE_STATUS.has(p.status||'normal')&&(p.status||'normal')!=='cancel').length;
+  const scheduledCnt = all.filter(p=>p.status==='scheduled').length;
+  const otherDayCnt = all.filter(p=>p.status==='other_day').length;
+  const unavailCnt = all.filter(p=>p.status==='unavailable').length;
+  const weekdayCnt = all.filter(p=>p.status==='weekday').length;
+  const cancelCnt = all.filter(p=>p.status==='cancel').length;
+
+  // 색상 팔레트 버튼
+  const palHtml = Object.entries(COLORS).map(([k,v])=>`
+    <button class="c-btn ${selectedColor===k?'selected-color':''}" title="${v.label}"
+      style="background:${v.bg};${k==='normal'?'border:1.5px solid #ccc':''}"
+      onclick="onColorClick('${k}')"></button>
+    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">${v.label}</span>
+  `).join('');
+
+  const selMsg = selectedIdx!==null
+    ? `<span class="sel-info active">✔ ${esc(all.find((_,i)=>i===selectedIdx)?.name||'')} 선택됨 — 색상을 클릭하세요</span>`
+    : `<span class="sel-info">환자 행을 클릭해서 선택 후 색상 적용</span>`;
+
+  wrap.innerHTML=`
+    <div class="main-top">
+      <div class="toolbar">
+        <div class="page-title">${fmtDate(curDate)}<span>${monthKey(curDate)}</span></div>
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" placeholder="이름·차트·전화 검색..." value="${esc(searchText)}" oninput="onSearch(this.value)">
+        </div>
+      </div>
+      <div class="action-bar">
+        <div class="color-bar">
+          <span class="color-bar-label">색상</span>
+          ${palHtml}
+        </div>
+        ${selMsg}
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="v">${all.length}</div><div class="l">전체</div></div>
+        <div class="stat"><div class="v">${waitingCnt}</div><div class="l">대기</div></div>
+        <div class="stat" style="border-left:3px solid ${COLORS.scheduled.bg}"><div class="v">${scheduledCnt}</div><div class="l">예약해드림</div></div>
+        <div class="stat" style="border-left:3px solid ${COLORS.other_day.bg}"><div class="v">${otherDayCnt}</div><div class="l">다른날예약</div></div>
+        <div class="stat" style="border-left:3px solid ${COLORS.unavailable.bg}"><div class="v">${unavailCnt}</div><div class="l">이날안됨</div></div>
+        <div class="stat" style="border-left:3px solid ${COLORS.weekday.bg}"><div class="v">${weekdayCnt}</div><div class="l">평일내원</div></div>
+        <div class="stat" style="border-left:3px solid #FF6B6B"><div class="v">${cancelCnt}</div><div class="l">당일취소</div></div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>이름</th><th>차트번호</th>
+            <th>전화번호</th><th>다음예약</th><th>장치</th><th>우선순위</th>
+            ${hasTurn?'<th>내원텀</th>':''}
+            <th>비고</th><th></th>
+          </tr></thead>
+          <tbody id="tbody">${buildTbody(pts, all, hasTurn)}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function buildTbody(pts, all, hasTurn){
+  if(!pts.length) return `<tr><td colspan="${hasTurn?10:9}" style="text-align:center;padding:36px;color:#aaa">환자가 없습니다</td></tr>`;
+  const priClr={1:'#E74C3C',2:'#E67E22',3:'#F1C40F',4:'#27AE60',5:'#8E44AD'};
+  let rows='', shownDivider=false;
+  pts.forEach(p=>{
+    const realIdx = all.indexOf(p);
+    const st = p.status||'normal';
+    const nameBg = COLORS[st]?.bg||'#fff';
+    const isDone = DONE_STATUS.has(st);
+    const isSelected = realIdx===selectedIdx;
+    const warnNote = p.note&&(p.note.includes('전화안받음')||p.note.includes('연락안받음')||p.note.includes('꺼져있음')||p.note.includes('취소빌런')||p.note.includes('노쇼'));
+
+    if(isDone&&!shownDivider){ shownDivider=true; rows+=`<tr class="divider-row"><td colspan="${hasTurn?10:9}">── 예약/처리 완료 ── (이름 더블클릭 → 대기로 되돌리기)</td></tr>`; }
+
+    rows+=`<tr class="${isSelected?'row-selected':''}" onclick="selectRow(${realIdx})">
+      <td>${p.order}</td>
+      <td class="name-c" style="background:${nameBg}">${esc(p.name)}</td>
+      <td class="chart-c" style="background:${nameBg}">${esc(p.chart)}</td>
+      <td class="phone-c"><a href="tel:${p.phone}" onclick="event.stopPropagation()">${esc(p.phone)}</a></td>
+      <td>${p.appt?`<span class="appt-badge">${esc(p.appt)}</span>`:`<span class="appt-none">-</span>`}</td>
+      <td>
+        <button class="dev-toggle ${p.device==='X'?'none':'has'}" onclick="event.stopPropagation();toggleDevice(${realIdx})">
+          ${p.device==='X'?'장치X':'장치O'}
+        </button>
+      </td>
+      <td>${p.priority?`<span class="pri-badge" style="background:${priClr[p.priority]||'#999'}">${p.priority}</span>`:''}</td>
+      ${hasTurn?`<td class="turn-c">${esc(p.turn)}</td>`:''}
+      <td class="note-c ${warnNote?'note-warn':''}">${esc(p.note)}</td>
+      <td>
+        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
+          ${isDone?`<button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(${realIdx})">↩대기</button>`:''}
+          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(${realIdx})">✏️수정</button>
+          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(${realIdx})">🗑️삭제</button>
+          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(${realIdx})">⚠️취소</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  return rows;
+}
+
+// ← 버튼: 대기목록 → 당일취소 명단으로 이동
+function moveToCancel(realIdx){
+  const dd = DB.dates.find(d=>d.date_str===curDate);
+  if(!dd) return;
+  const p = dd.patients[realIdx];
+  if(!confirm(`"${p.name}"을 당일취소 명단으로 이동할까요?`)) return;
+  DB.cancelList.push({
+    order: DB.cancelList.length+1,
+    name: p.name,
+    chart: p.chart,
+    phone: p.phone,
+    note: `대기목록(${fmtDate(curDate)})에서 이동${p.note?(' / '+p.note):''}`
+  });
+  dd.patients.splice(realIdx,1);
+  dd.patients.forEach((x,i)=>x.order=i+1);
+  selectedIdx=null; renderMain(); buildSidebar();
+}
+
+// 대기로 되돌리기 버튼
+function resetDoneRow(realIdx){
+  const dd = DB.dates.find(d=>d.date_str===curDate);
+  if(!dd) return;
+  dd.patients[realIdx].status = 'normal';
+  selectedIdx=null; renderMain();
+}
+
+// ─── ROW SELECT & COLOR APPLY ─────────────────────────────────────────────────
+function selectRow(realIdx){
+  if(selectedIdx===realIdx){ selectedIdx=null; }
+  else{ selectedIdx=realIdx; }
+  if(selectedColor!==null&&selectedIdx!==null){ applyColor(); return; }
+  renderMain();
+}
+
+function onColorClick(colorKey){
+  selectedColor=colorKey;
+  if(selectedIdx!==null){ applyColor(); return; }
+  renderMain(); // just update palette highlight
+}
+
+function applyColor(){
+  const dd=DB.dates.find(d=>d.date_str===curDate);
+  if(!dd||selectedIdx===null||selectedColor===null) return;
+  const p=dd.patients[selectedIdx];
+
+  if(selectedColor==='cancel'){
+    // 당일취소 명단으로 자동 이동
+    DB.cancelList.push({
+      order: DB.cancelList.length+1,
+      name: p.name,
+      chart: p.chart,
+      phone: p.phone,
+      note: `당일취소 (${fmtDate(curDate)})${p.note?(' / '+p.note):''}`
+    });
+    dd.patients.splice(selectedIdx,1);
+    dd.patients.forEach((x,i)=>x.order=i+1);
+    selectedIdx=null;
+    selectedColor=null; window._saveToFb&&window._saveToFb(); buildSidebar();
+    renderMain();
+    // 잠깐 토스트 메시지
+    showToast(`당일취소 명단으로 이동됐어요`);
+    return;
+  }
+
+  const _pName=dd.patients[selectedIdx].name;
+  dd.patients[selectedIdx].status=selectedColor;
+  if(selectedColor==='scheduled') syncScheduledStatus(_pName, curDate);
+  if(selectedColor==='weekday') syncWeekdayStatus(_pName, curDate);
+  selectedIdx=null; window._saveToFb&&window._saveToFb(); renderMain();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── DEVICE TOGGLE ────────────────────────────────────────────────────────────
+function toggleDevice(realIdx){
+  const dd=DB.dates.find(d=>d.date_str===curDate);
+  if(!dd) return;
+  dd.patients[realIdx].device = dd.patients[realIdx].device==='X' ? 'O' : 'X'; renderMain();
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+function onSearch(v){ searchText=v; selectedIdx=null; renderMain(); }
+
+// ─── CANCEL PAGE ─────────────────────────────────────────────────────────────
+function renderCancel(wrap){
+  wrap.innerHTML=`
+    <div class="main-top">
+      <div class="toolbar">
+        <div class="page-title">⚠️ 당일취소 명단</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--gray400);margin-bottom:10px;padding:8px 12px;background:#FFF8E1;border-radius:var(--r-s);border:1px solid #FFE082">
+        💡 <b>더블클릭</b>하면 날짜를 선택해서 그 날 대기 목록에 <b style="color:#19998F">예약해드림</b>으로 옮길 수 있어요
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <div class="tbl-wrap">
+        <div class="cancel-hdr-bar">📋 당일취소 / 노쇼 환자 (${DB.cancelList.length}명)</div>
+        <table>
+          <thead><tr><th>#</th><th>이름</th><th>차트번호</th><th>전화번호</th><th>취소이력</th><th></th></tr></thead>
+          <tbody>${DB.cancelList.map((p,i)=>`<tr style="cursor:pointer" ondblclick="openMoveModal(${i})" title="더블클릭하면 날짜로 이동">
+            <td>${p.order}</td>
+            <td class="name-c" style="background:#FFB8B8">${esc(p.name)}</td>
+            <td class="chart-c" style="background:#FFB8B8">${esc(p.chart)}</td>
+            <td class="phone-c"><a href="tel:${p.phone}" onclick="event.stopPropagation()">${esc(p.phone)}</a></td>
+            <td class="note-c note-warn">
+              ${esc(p.note)}
+              <div class="cancel-row-hint">더블클릭 → 날짜 이동</div>
+            </td>
+            <td><div class="row-acts" style="opacity:1">
+              <button class="icon-btn del" onclick="event.stopPropagation();delCancel(${i})">🗑️</button>
+            </div></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ─── MOVE TO DATE ─────────────────────────────────────────────────────────────
+let movingCancelIdx = null;
+
+function openMoveModal(cancelIdx){
+  movingCancelIdx = cancelIdx;
+  const p = DB.cancelList[cancelIdx];
+  document.getElementById('moveTitle').textContent = `${p.name} → 날짜 선택`;
+
+  const list = document.getElementById('moveList');
+  // Show all dates sorted, upcoming first
+  const sorted = [...DB.dates].sort((a,b)=>a.date_str.localeCompare(b.date_str));
+  list.innerHTML = sorted.map(d=>{
+    const past = isPast(d.date_str);
+    return `<div class="date-list-item ${past?'':''}\"
+      style="${past?'opacity:.45':''}"
+      onclick="${past?'':'moveCancelToDate(\''+d.date_str+'\')'}">
+      <div>
+        <div class="dl-date">${fmtDate(d.date_str)} <span style="font-size:10px;color:var(--gray400)">${monthKey(d.date_str)}</span></div>
+        ${past?'<div style="font-size:10px;color:var(--gray400)">지난 날짜</div>':''}
+      </div>
+      <div class="dl-cnt">${d.patients.length}명</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('moveOverlay').classList.remove('hidden');
+}
+
+function closeMoveModal(){
+  document.getElementById('moveOverlay').classList.add('hidden');
+  movingCancelIdx = null;
+}
+
+function moveCancelToDate(dateStr){
+  if(movingCancelIdx === null) return;
+  const p = DB.cancelList[movingCancelIdx];
+  const dd = DB.dates.find(d=>d.date_str===dateStr);
+  if(!dd) return;
+
+  // Add to target date as "scheduled" (예약해드림)
+  dd.patients.push({
+    order: dd.patients.length + 1,
+    name: p.name,
+    chart: p.chart,
+    phone: p.phone,
+    appt: '',
+    device: 'O',
+    priority: '',
+    turn: '',
+    note: `당일취소 명단에서 이동 (${p.note||''})`.trim().replace(/\s*\(\s*\)\s*$/,''),
+    status: 'scheduled'
+  });
+
+  // Remove from cancel list
+  DB.cancelList.splice(movingCancelIdx, 1);
+  DB.cancelList.forEach((x,i)=>x.order=i+1);
+
+  closeMoveModal(); buildSidebar();
+
+  // Navigate to the target date
+  selectDate(dateStr);
+
+  // Brief flash to show added patient
+  setTimeout(()=>{
+    const rows = document.querySelectorAll('#tbody tr');
+    const last = [...rows].find(r=>r.querySelector('.name-c')?.textContent?.trim()===p.name);
+    if(last){ last.style.transition='background .3s'; last.style.background='#B8F0C8'; setTimeout(()=>{ last.style.background=''; },1500); }
+  }, 100);
+}
+
+// ─── 헤더 환자추가 (멀티날짜 달력) ──────────────────────────────────────────
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let multiSelectedDates = []; // ['2026-06-13', ...]
+let isGlobalAdd = false; // 헤더에서 열었는지 여부
+
+function openAddGlobal(){
+  isGlobalAdd = true;
+  editingIdx = null;
+  document.getElementById('modalTitle').textContent = '환자 추가 (여러 날짜)';
+  clearForm();
+  document.getElementById('multi-date-section').style.display = '';
+  multiSelectedDates = [];
+  calYear = new Date().getFullYear();
+  calMonth = new Date().getMonth();
+  renderCal();
+  renderSelDates();
+  document.getElementById('overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(),50);
+}
+
+function openAdd(){
+  isGlobalAdd = false;
+  editingIdx = (curDate==='cancel') ? -999 : null;
+  document.getElementById('modalTitle').textContent = '환자 추가';
+  clearForm();
+  document.getElementById('multi-date-section').style.display = 'none';
+  document.getElementById('overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(),50);
+}
+
+function renderCal(){
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('calTitle').textContent = `${calYear}년 ${calMonth+1}월`;
+  const grid = document.getElementById('calGrid');
+  let html = days.map(d=>`<div class="cal-day-hd">${d}</div>`).join('');
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const last  = new Date(calYear, calMonth+1, 0).getDate();
+  // prev month padding
+  const prevLast = new Date(calYear, calMonth, 0).getDate();
+  for(let i=0;i<first;i++) html+=`<button class="cal-day other-month" disabled>${prevLast-first+i+1}</button>`;
+  for(let d=1;d<=last;d++){
+    const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const date = new Date(calYear,calMonth,d);
+    const isSat = date.getDay()===6;
+    const isSel = multiSelectedDates.includes(ds);
+    const hasP  = DB.dates.find(x=>x.date_str===ds);
+    html+=`<button class="cal-day ${isSat?'sat':''} ${isSel?'selected-day':''} ${hasP&&!isSel?'has-patient':''}"
+      ${!isSat?'disabled':''}
+      onclick="toggleCalDay('${ds}')">${d}</button>`;
+  }
+  // next month padding
+  const remain = (7 - ((first+last)%7))%7;
+  for(let i=1;i<=remain;i++) html+=`<button class="cal-day other-month" disabled>${i}</button>`;
+  grid.innerHTML = html;
+}
+
+function toggleCalDay(ds){
+  const idx = multiSelectedDates.indexOf(ds);
+  if(idx>=0) multiSelectedDates.splice(idx,1);
+  else multiSelectedDates.push(ds);
+  multiSelectedDates.sort();
+  renderCal(); renderSelDates();
+}
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
+function renderSelDates(){
+  const el = document.getElementById('selectedDates');
+  if(!multiSelectedDates.length){ el.innerHTML='<span style="color:var(--gray400);font-size:11px">선택된 날짜 없음</span>'; return; }
+  el.innerHTML = multiSelectedDates.map(ds=>`
+    <span class="sel-date-tag">${fmtDate(ds)}<button onclick="toggleCalDay('${ds}')">✕</button></span>`).join('');
+}
+
+// 내원텀 버튼
+function setTurn(val){
+  document.getElementById('f-turn').value = val;
+  document.querySelectorAll('.turn-btn').forEach(b=>{
+    b.classList.toggle('on', b.textContent===(val||'없음'));
+  });
+}
+
+// 예약해드림 → 다른 날짜 자동 "다른날예약" 처리
+function syncScheduledStatus(name, bookedDateStr){
+  // 예약해드림 → 다른 날짜 "다른날예약"으로
+  DB.dates.forEach(d=>{
+    if(d.date_str === bookedDateStr) return;
+    d.patients.forEach(p=>{
+      if(p.name === name && (p.status==='normal'||p.status==='regular'||p.status==='unavailable'||p.status==null||p.status==='')){
+        p.status = 'other_day';
+      }
+    });
+  });
+}
+
+function syncWeekdayStatus(name, bookedDateStr){
+  // 평일내원 → 다른 날짜도 "평일내원"으로 처리완료
+  DB.dates.forEach(d=>{
+    if(d.date_str === bookedDateStr) return;
+    d.patients.forEach(p=>{
+      if(p.name === name && (p.status==='normal'||p.status==='regular'||p.status==='unavailable'||p.status==='other_day'||p.status==null||p.status==='')){
+        p.status = 'weekday';
+      }
+    });
+  });
+}
+
+// ─── PATIENT MODAL ────────────────────────────────────────────────────────────
+function openAdd(){
+  editingIdx = (curDate==='cancel') ? -999 : null;
+  document.getElementById('modalTitle').textContent = '환자 추가';
+  clearForm();
+  document.getElementById('overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(),50);
+}
+function openEdit(idx){
+  const dd=DB.dates.find(d=>d.date_str===curDate); if(!dd)return;
+  editingIdx=idx;
+  const p=dd.patients[idx];
+  document.getElementById('modalTitle').textContent='환자 수정';
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-chart').value=p.chart;
+  document.getElementById('f-phone').value=p.phone;
+  document.getElementById('f-appt').value=p.appt||'';
+  document.getElementById('f-device').value=p.device||'O';
+  document.getElementById('f-priority').value=p.priority||'';
+  document.getElementById('f-turn').value=p.turn||'';
+  document.querySelectorAll('.turn-btn').forEach(b=>b.classList.toggle('on',b.textContent===(p.turn||'없음')));
+  document.getElementById('f-note').value=p.note||'';
+  const r=document.querySelector(`input[name="st"][value="${p.status||'normal'}"]`);
+  if(r)r.checked=true;
+  document.getElementById('multi-date-section').style.display='none';
+  isGlobalAdd=false;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('overlay').classList.add('hidden'); document.getElementById('ac-drop').classList.add('hidden'); }
+function clearForm(){
+  ['f-name','f-chart','f-phone','f-appt','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-turn').value='';
+  document.getElementById('f-device').value='O';
+  document.getElementById('f-priority').value='';
+  document.getElementById('s-normal').checked=true;
+  document.querySelectorAll('.turn-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.turn-btn').classList.add('on'); // '없음' 기본선택
+  multiSelectedDates=[];
+}
+function savePatient(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){alert('이름을 입력해주세요');return;}
+  const p={
+    name, chart:document.getElementById('f-chart').value.trim(),
+    phone:document.getElementById('f-phone').value.trim(),
+    appt:document.getElementById('f-appt').value.trim(),
+    device:document.getElementById('f-device').value,
+    priority:document.getElementById('f-priority').value,
+    turn:document.getElementById('f-turn').value.trim(),
+    note:document.getElementById('f-note').value.trim(),
+    status:document.querySelector('input[name="st"]:checked').value
+  };
+
+  // 헤더에서 열었을 때: 여러 날짜에 한번에 추가
+  if(isGlobalAdd){
+    if(!multiSelectedDates.length){alert('날짜를 하나 이상 선택해주세요');return;}
+    multiSelectedDates.forEach(ds=>{
+      let dd = DB.dates.find(d=>d.date_str===ds);
+      if(!dd){ dd={date_str:ds,patients:[]}; DB.dates.push(dd); DB.dates.sort((a,b)=>a.date_str.localeCompare(b.date_str)); }
+      // 이미 있으면 추가 안 함
+      if(dd.patients.find(x=>x.name===name)) return;
+      dd.patients.push({...p, order:dd.patients.length+1});
+    });
+    // 예약해드림이면 다른 날짜 자동 처리
+    if(p.status==='scheduled') multiSelectedDates.forEach(ds=>syncScheduledStatus(name,ds));
+    if(p.status==='weekday') multiSelectedDates.forEach(ds=>syncWeekdayStatus(name,ds));
+    closeModal(); buildSidebar(); renderMain(); window._saveToFb&&window._saveToFb();
+    showToast(`${name} → ${multiSelectedDates.length}개 날짜에 추가됐어요`);
+    return;
+  }
+
+  if(editingIdx===-999){
+    DB.cancelList.push({order:DB.cancelList.length+1,name,chart:p.chart,phone:p.phone,note:p.note});
+  } else {
+    const dd=DB.dates.find(d=>d.date_str===curDate); if(!dd)return;
+    if(p.status==='cancel'){
+      DB.cancelList.push({
+        order:DB.cancelList.length+1, name, chart:p.chart, phone:p.phone,
+        note:`당일취소 (${fmtDate(curDate)})${p.note?(' / '+p.note):''}`
+      });
+      if(editingIdx!==null){
+        dd.patients.splice(editingIdx,1);
+        dd.patients.forEach((x,i)=>x.order=i+1);
+      }
+      closeModal(); buildSidebar(); renderMain();
+      showToast(`${name} → 당일취소 명단으로 이동됐어요`);
+      return;
+    }
+    if(editingIdx===null){ p.order=dd.patients.length+1; dd.patients.push(p); }
+    else{ p.order=dd.patients[editingIdx].order; dd.patients[editingIdx]=p; }
+    // 예약해드림으로 바꿨으면 다른 날짜 자동 other_day
+    if(p.status==='scheduled') syncScheduledStatus(name, curDate);
+    if(p.status==='weekday') syncWeekdayStatus(name, curDate);
+  }
+  lookup=buildLookup();
+  closeModal(); renderMain(); buildSidebar(); window._saveToFb&&window._saveToFb();
+}
+function delPatient(idx){
+  if(!confirm('삭제할까요?'))return;
+  const dd=DB.dates.find(d=>d.date_str===curDate); if(!dd)return;
+  dd.patients.splice(idx,1);
+  dd.patients.forEach((p,i)=>p.order=i+1);
+  selectedIdx=null; renderMain(); buildSidebar(); window._saveToFb&&window._saveToFb();
+}
+function delCancel(idx){
+  if(!confirm('삭제할까요?'))return;
+  DB.cancelList.splice(idx,1);
+  DB.cancelList.forEach((p,i)=>p.order=i+1); renderMain(); buildSidebar();
+}
+
+// ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+function onNameInput(val){
+  const drop=document.getElementById('ac-drop');
+  if(!val){ drop.classList.add('hidden'); return; }
+  const hits=lookup.filter(p=>p.name.toLowerCase().includes(val.toLowerCase())).slice(0,8);
+  if(!hits.length){ drop.classList.add('hidden'); return; }
+  drop.innerHTML=hits.map(p=>`<div class="ac-item" onmousedown="pickAC('${esc(p.name)}','${esc(p.chart)}','${esc(p.phone)}')">
+    <div class="ac-name">${esc(p.name)}</div>
+    <div class="ac-detail">차트: ${esc(p.chart)} | ${esc(p.phone)}</div>
+  </div>`).join('');
+  drop.classList.remove('hidden');
+}
+function pickAC(name,chart,phone){
+  document.getElementById('f-name').value=name;
+  document.getElementById('f-chart').value=chart;
+  document.getElementById('f-phone').value=phone;
+  document.getElementById('ac-drop').classList.add('hidden');
+}
+function onNameKey(e){ if(e.key==='Escape')document.getElementById('ac-drop').classList.add('hidden'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.ac-wrap'))document.getElementById('ac-drop').classList.add('hidden'); });
+
+// ─── DATE MODAL ──────────────────────────────────────────────────────────────
+function openDateModal(){
+  dateTab='single';
+  document.getElementById('panel-single').style.display='';
+  document.getElementById('panel-month').style.display='none';
+  document.getElementById('tab-single').classList.add('on');
+  document.getElementById('tab-month').classList.remove('on');
+  document.getElementById('new-date-input').value='';
+  // populate year
+  const now=new Date(), sel=document.getElementById('bulk-year');
+  sel.innerHTML='';
+  for(let y=now.getFullYear();y<=now.getFullYear()+2;y++){
+    const o=document.createElement('option'); o.value=y; o.textContent=y+'년'; sel.appendChild(o);
+  }
+  document.getElementById('bulk-month').value=now.getMonth()+1;
+  sel.onchange=buildSatGrid;
+  document.getElementById('dateOverlay').classList.remove('hidden');
+}
+function closeDateModal(){ document.getElementById('dateOverlay').classList.add('hidden'); }
+function switchTab(t){
+  dateTab=t;
+  document.getElementById('panel-single').style.display=t==='single'?'':'none';
+  document.getElementById('panel-month').style.display=t==='month'?'':'none';
+  document.getElementById('tab-single').classList.toggle('on',t==='single');
+  document.getElementById('tab-month').classList.toggle('on',t==='month');
+  if(t==='month')buildSatGrid();
+}
+function buildSatGrid(){
+  const y=parseInt(document.getElementById('bulk-year').value);
+  const m=parseInt(document.getElementById('bulk-month').value);
+  const grid=document.getElementById('sat-grid');
+  const sats=[];
+  const d=new Date(y,m-1,1);
+  while(d.getDay()!==6)d.setDate(d.getDate()+1);
+  while(d.getMonth()===m-1){
+    const ds=`${y}-${String(m).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    sats.push({ds,label:`${m}/${d.getDate()} (토)`,exists:!!DB.dates.find(x=>x.date_str===ds)});
+    d.setDate(d.getDate()+7);
+  }
+  grid.innerHTML=sats.map(s=>`
+    <label class="sat-item" style="${s.exists?'opacity:.4;pointer-events:none':''}">
+      <input type="checkbox" class="sat-cb" value="${s.ds}" ${!s.exists?'checked':''}>
+      ${s.label}${s.exists?' ✓':''}
+    </label>`).join('');
+}
+function selAllSats(v){ document.querySelectorAll('.sat-cb').forEach(cb=>{ if(!cb.disabled)cb.checked=v; }); }
+function addNewDate(){
+  if(dateTab==='single'){
+    const v=document.getElementById('new-date-input').value;
+    if(!v){alert('날짜를 선택해주세요');return;}
+    if(DB.dates.find(d=>d.date_str===v)){alert('이미 있는 날짜입니다');return;}
+    DB.dates.push({date_str:v,patients:[]});
+    DB.dates.sort((a,b)=>a.date_str.localeCompare(b.date_str)); window._saveToFb&&window._saveToFb(); closeDateModal(); buildSidebar(); selectDate(v);
+  } else {
+    const checked=[...document.querySelectorAll('.sat-cb:checked')].map(cb=>cb.value);
+    if(!checked.length){alert('날짜를 선택해주세요');return;}
+    checked.forEach(v=>{ if(!DB.dates.find(d=>d.date_str===v))DB.dates.push({date_str:v,patients:[]}); });
+    DB.dates.sort((a,b)=>a.date_str.localeCompare(b.date_str)); window._saveToFb&&window._saveToFb(); closeDateModal(); buildSidebar(); selectDate(checked[0]);
+  }
+}
+
+// ─── GLOBAL SEARCH ────────────────────────────────────────────────────────────
+function onHdrSearch(val){
+  const drop = document.getElementById('hdr-ac-drop');
+  if(!val||val.length<1){ drop.classList.add('hidden'); return; }
+  const s=val.toLowerCase();
+  // Deduplicate by name
+  const seen=new Set(), hits=[];
+  DB.dates.forEach(d=>d.patients.forEach(p=>{
+    if((p.name.toLowerCase().includes(s)||p.phone.replace(/-/g,'').includes(s.replace(/-/g,''))||p.chart.includes(s))&&!seen.has(p.name)){
+      seen.add(p.name); hits.push({name:p.name,chart:p.chart,phone:p.phone});
+    }
+  }));
+  if(!hits.length){ drop.classList.add('hidden'); return; }
+  drop.innerHTML = hits.slice(0,8).map(h=>`
+    <div class="hdr-ac-item" onclick="runGlobalSearch('${h.name.replace(/'/g,"\\'")}')">
+      <div class="hdr-ac-name">${esc(h.name)}</div>
+      <div class="hdr-ac-sub">차트: ${esc(h.chart)} | ${esc(h.phone)}</div>
+    </div>`).join('');
+  drop.classList.remove('hidden');
+}
+function onHdrSearchKey(e){
+  if(e.key==='Enter'){
+    const v=document.getElementById('hdr-search-input').value.trim();
+    if(v) runGlobalSearch(v);
+  }
+  if(e.key==='Escape') document.getElementById('hdr-ac-drop').classList.add('hidden');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.hdr-ac-wrap')) document.getElementById('hdr-ac-drop').classList.add('hidden');
+});
+
+function runGlobalSearch(query){
+  document.getElementById('hdr-search-input').value=query;
+  document.getElementById('hdr-ac-drop').classList.add('hidden');
+  curDate='__gsearch__';
+  selectedIdx=null; selectedColor=null;
+  buildSidebar();
+  renderGlobalSearch(query);
+}
+
+function renderGlobalSearch(query){
+  const wrap=document.getElementById('main-wrap');
+  const s=query.toLowerCase();
+  // Collect all matching entries
+  const waiting=[], done=[];
+  DB.dates.forEach(d=>{
+    d.patients.forEach(p=>{
+      if(p.name.toLowerCase().includes(s)||p.chart.includes(s)||p.phone.replace(/-/g,'').includes(s.replace(/-/g,''))){
+        const entry={...p, date_str:d.date_str};
+        if(DONE_STATUS.has(p.status||'normal')) done.push(entry);
+        else waiting.push(entry);
+      }
+    });
+  });
+  // Sort by date
+  waiting.sort((a,b)=>a.date_str.localeCompare(b.date_str));
+  done.sort((a,b)=>a.date_str.localeCompare(b.date_str));
+
+  function cardHtml(e){
+    const st=e.status||'normal';
+    const bg=COLORS[st]?.bg||'#fff';
+    const label=COLORS[st]?.label||'기본';
+    return `<div class="gs-card" onclick="selectDate('${e.date_str}')">
+      <div class="gs-dot" style="background:${bg};border:1px solid rgba(0,0,0,.1)"></div>
+      <div style="flex:1;min-width:0">
+        <div><span class="gs-name">${esc(e.name)}</span>
+          <span style="font-size:10.5px;color:var(--gray400);margin-left:6px">차트 ${esc(e.chart)}</span>
+          <span style="font-size:10px;background:${bg};border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:1px 6px;margin-left:4px;font-weight:600">${label}</span>
+        </div>
+        <div class="gs-date">📅 ${fmtDate(e.date_str)} ${monthKey(e.date_str)} | 📞 ${esc(e.phone)}</div>
+        ${e.note?`<div class="gs-note">${esc(e.note)}</div>`:''}
+      </div>
+    </div>`;
+  }
+
+  wrap.innerHTML=`
+    <div class="main-top">
+      <div class="toolbar">
+        <div class="page-title">🔍 "${esc(query)}" 검색 결과</div>
+        <button class="add-btn" style="background:var(--gray600)" onclick="clearGSearch()">✕ 검색 닫기</button>
+      </div>
+    </div>
+    <div class="gs-wrap">
+      <div class="gs-section-hd">⏳ 대기 중 (${waiting.length}명)</div>
+      ${waiting.length?waiting.map(cardHtml).join(''):'<div style="color:var(--gray400);font-size:12px;padding:8px">없음</div>'}
+      <div class="gs-section-hd" style="margin-top:16px">✅ 예약/처리 완료 (${done.length}명)</div>
+      ${done.length?done.map(cardHtml).join(''):'<div style="color:var(--gray400);font-size:12px;padding:8px">없음</div>'}
+    </div>`;
+}
+
+function clearGSearch(){
+  document.getElementById('hdr-search-input').value='';
+  curDate=null;
+  document.getElementById('main-wrap').innerHTML=`<div class="empty"><div class="ico">📅</div><div class="txt">왼쪽에서 날짜를 선택하세요</div></div>`;
+  buildSidebar();
+}
+
+// ─── SAVE TO FILE ────────────────────────────────────────────────────────────
+// ─── INIT ────────────────────────────────────────────────────────────────────
+// 로딩 표시
+document.getElementById('main-wrap').innerHTML = `
+  <div class="empty">
+    <div class="ico">🔄</div>
+    <div class="txt">데이터 불러오는 중...</div>
+  </div>`;
+
+window._onFbReady = function() {
+  initCollapse();
+  buildSidebar();
+  const first = DB.dates.find(d=>d.date_str>=TODAY);
+  if(first) selectDate(first.date_str);
+};
+</script>
+
+
+</body></html>
