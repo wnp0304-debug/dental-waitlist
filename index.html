@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0111)file:///C:/Users/insti/Downloads/%ED%86%A0%EC%9A%94%EC%9D%BC_%EB%8C%80%EA%B8%B0%EC%98%88%EC%95%BD_Firebase.html -->
-<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🦷 토요일 대기 환자 관리</title>
 <style>
@@ -429,7 +429,8 @@ tbody tr:hover .row-acts{opacity:1}
   window._fbReady = false;
   onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
-    if(data) {
+    // 데이터가 있고 dates 배열이 있을 때만 사용
+    if(data && data.dates && data.dates.length > 0) {
       window.DB = data;
       if(!window._fbReady) {
         window._fbReady = true;
@@ -442,8 +443,24 @@ tbody tr:hover .row-acts{opacity:1}
         }
       }
     } else {
-      // 처음 실행 시 RAW_DATA를 Firebase에 저장
-      set(dbRef, window.RAW_DATA);
+      // 처음 실행 시 또는 데이터 없을 때 RAW_DATA를 Firebase에 저장
+      console.log('Firebase 초기 데이터 업로드 중...');
+      set(dbRef, window.RAW_DATA).then(() => {
+        console.log('초기 데이터 업로드 완료!');
+        window.DB = JSON.parse(JSON.stringify(window.RAW_DATA));
+        if(!window._fbReady) {
+          window._fbReady = true;
+          window._onFbReady && window._onFbReady();
+        }
+      }).catch(err => {
+        console.error('Firebase 업로드 실패:', err);
+        // Firebase 실패해도 로컬로 동작
+        window.DB = JSON.parse(JSON.stringify(window.RAW_DATA));
+        if(!window._fbReady) {
+          window._fbReady = true;
+          window._onFbReady && window._onFbReady();
+        }
+      });
     }
   });
 
@@ -466,7 +483,8 @@ tbody tr:hover .row-acts{opacity:1}
   <div class="hdr-ac-wrap">
     <div class="hdr-gsearch">
       <span style="color:rgba(255,255,255,.6);font-size:13px">🔍</span>
-      <input type="text" id="hdr-search-input" placeholder="전체 환자 검색..." autocomplete="off" oninput="onHdrSearch(this.value)" onkeydown="onHdrSearchKey(event)">
+      <input type="text" id="hdr-search-input" placeholder="전체 환자 검색..." autocomplete="off"
+        oninput="onHdrSearch(this.value)" onkeydown="onHdrSearchKey(event)">
     </div>
     <div class="hdr-ac-drop hidden" id="hdr-ac-drop"></div>
   </div>
@@ -476,306 +494,7 @@ tbody tr:hover .row-acts{opacity:1}
 
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="sb-scroll" id="sidebar"><div class="sb-year collapsed" onclick="toggleYear(&#39;2025년&#39;)">
-      <span class="sb-year-left">▶ 2025년</span><span class="arrow">▼</span>
-    </div><div class="sb-year-group hidden" data-y="2025년"><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 1월&#39;)">
-        <span class="sb-month-left">📁 1월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 1월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2025년 1월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-10&#39;)">
-            <span class="dt">1/10 (금)</span><span class="cnt">16</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-10&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-10&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-17&#39;)">
-            <span class="dt">1/17 (금)</span><span class="cnt">14</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-17&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-17&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-24&#39;)">
-            <span class="dt">1/24 (금)</span><span class="cnt">22</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-24&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-24&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-01-31&#39;)">
-            <span class="dt">1/31 (금)</span><span class="cnt">16</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-01-31&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-01-31&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 2월&#39;)">
-        <span class="sb-month-left">📁 2월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 2월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2025년 2월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-02-07&#39;)">
-            <span class="dt">2/7 (금)</span><span class="cnt">24</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-02-07&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-02-07&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-02-28&#39;)">
-            <span class="dt">2/28 (금)</span><span class="cnt">20</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-02-28&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-02-28&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2025년 4월&#39;)">
-        <span class="sb-month-left">📁 4월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2025년 4월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2025년 4월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2025-04-25&#39;)">
-            <span class="dt">4/25 (금)</span><span class="cnt">28</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2025-04-25&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2025-04-25&#39;)">🗑️</button>
-          </div>
-        </div></div></div><div class="sb-year " onclick="toggleYear(&#39;2026년&#39;)">
-      <span class="sb-year-left">▶ 2026년</span><span class="arrow">▼</span>
-    </div><div class="sb-year-group " data-y="2026년"><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 3월&#39;)">
-        <span class="sb-month-left">📁 3월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 3월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2026년 3월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-07&#39;)">
-            <span class="dt">3/7 (토)</span><span class="cnt">25</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-07&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-07&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-14&#39;)">
-            <span class="dt">3/14 (토)</span><span class="cnt">26</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-14&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-14&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-03-21&#39;)">
-            <span class="dt">3/21 (토)</span><span class="cnt">27</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-03-21&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-03-21&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 4월&#39;)">
-        <span class="sb-month-left">📁 4월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 4월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2026년 4월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-04-11&#39;)">
-            <span class="dt">4/11 (토)</span><span class="cnt">21</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-04-11&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-04-11&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-04-18&#39;)">
-            <span class="dt">4/18 (토)</span><span class="cnt">25</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-04-18&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-04-18&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month sb-month-past collapsed" onclick="toggleMonth(&#39;2026년 5월&#39;)">
-        <span class="sb-month-left">📁 5월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 5월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group hidden" data-m="2026년 5월"><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-05-02&#39;)">
-            <span class="dt">5/2 (토)</span><span class="cnt">23</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-05-02&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-05-02&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  past-d" onclick="selectDate(&#39;2026-05-16&#39;)">
-            <span class="dt">5/16 (토)</span><span class="cnt">22</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-05-16&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-05-16&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 6월&#39;)">
-        <span class="sb-month-left">📅 6월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 6월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group " data-m="2026년 6월"><div class="date-row">
-          <button class="date-btn active " onclick="selectDate(&#39;2026-06-13&#39;)">
-            <span class="dt">6/13 (토)</span><span class="cnt">27</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-13&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-13&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-06-20&#39;)">
-            <span class="dt">6/20 (토)</span><span class="cnt">32</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-20&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-20&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-06-27&#39;)">
-            <span class="dt">6/27 (토)</span><span class="cnt">27</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-06-27&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-06-27&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 7월&#39;)">
-        <span class="sb-month-left">📅 7월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 7월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group " data-m="2026년 7월"><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-07-04&#39;)">
-            <span class="dt">7/4 (토)</span><span class="cnt">8</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-04&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-04&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-07-11&#39;)">
-            <span class="dt">7/11 (토)</span><span class="cnt">10</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-11&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-11&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-07-25&#39;)">
-            <span class="dt">7/25 (토)</span><span class="cnt">9</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-07-25&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-07-25&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 8월&#39;)">
-        <span class="sb-month-left">📅 8월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 8월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group " data-m="2026년 8월"><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-08-22&#39;)">
-            <span class="dt">8/22 (토)</span><span class="cnt">3</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-08-22&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-08-22&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-08-29&#39;)">
-            <span class="dt">8/29 (토)</span><span class="cnt">3</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-08-29&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-08-29&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 9월&#39;)">
-        <span class="sb-month-left">📅 9월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 9월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group " data-m="2026년 9월"><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-09-05&#39;)">
-            <span class="dt">9/5 (토)</span><span class="cnt">1</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-05&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-05&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-09-12&#39;)">
-            <span class="dt">9/12 (토)</span><span class="cnt">1</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-12&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-12&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-09-19&#39;)">
-            <span class="dt">9/19 (토)</span><span class="cnt">1</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-09-19&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-09-19&#39;)">🗑️</button>
-          </div>
-        </div></div><div class="sb-month  " onclick="toggleMonth(&#39;2026년 11월&#39;)">
-        <span class="sb-month-left">📅 11월</span>
-        <span class="sb-month-acts" onclick="event.stopPropagation()">
-          <button class="mmb del" title="이 달 삭제" onclick="delMonth(&#39;2026년 11월&#39;)">🗑️</button>
-        </span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="sb-group " data-m="2026년 11월"><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-11-07&#39;)">
-            <span class="dt">11/7 (토)</span><span class="cnt">1</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-11-07&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-11-07&#39;)">🗑️</button>
-          </div>
-        </div><div class="date-row">
-          <button class="date-btn  " onclick="selectDate(&#39;2026-11-28&#39;)">
-            <span class="dt">11/28 (토)</span><span class="cnt">1</span>
-          </button>
-          <div class="date-meta-btns">
-            <button class="dmb" title="날짜 수정" onclick="editDateStr(&#39;2026-11-28&#39;)">✏️</button>
-            <button class="dmb del" title="삭제" onclick="delDateEntry(&#39;2026-11-28&#39;)">🗑️</button>
-          </div>
-        </div></div></div><button class="sb-cancel-btn " onclick="selectDate(&#39;cancel&#39;)" style="margin-top:4px">
-    <span class="cn">⚠️ 당일취소</span><span class="cc">6</span>
-  </button></div>
+    <div class="sb-scroll" id="sidebar"></div>
     <div class="sb-bottom">
       <button class="sb-add-date" onclick="openDateModal()">📅 날짜 추가</button>
     </div>
@@ -783,659 +502,11 @@ tbody tr:hover .row-acts{opacity:1}
 
   <!-- MAIN -->
   <div class="main" id="main-wrap">
-    <div class="main-top">
-      <div class="toolbar">
-        <div class="page-title">6/13 (토)<span>2026년 6월</span></div>
-        <div class="search-box">
-          <span>🔍</span>
-          <input type="text" placeholder="이름·차트·전화 검색..." value="" oninput="onSearch(this.value)">
-        </div>
-      </div>
-      <div class="action-bar">
-        <div class="color-bar">
-          <span class="color-bar-label">색상</span>
-          
-    <button class="c-btn " title="기본" style="background:#ffffff;border:1.5px solid #ccc" onclick="onColorClick(&#39;normal&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">기본</span>
-  
-    <button class="c-btn " title="예약해드림" style="background:#FFE500;" onclick="onColorClick(&#39;scheduled&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">예약해드림</span>
-  
-    <button class="c-btn " title="잘오는사람" style="background:#B8F0C8;" onclick="onColorClick(&#39;regular&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">잘오는사람</span>
-  
-    <button class="c-btn " title="다른날예약" style="background:#B8D4FF;" onclick="onColorClick(&#39;other_day&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">다른날예약</span>
-  
-    <button class="c-btn " title="이날안됨" style="background:#FFB8B8;" onclick="onColorClick(&#39;unavailable&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">이날안됨</span>
-  
-    <button class="c-btn " title="평일내원" style="background:#DDD0FF;" onclick="onColorClick(&#39;weekday&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">평일내원</span>
-  
-    <button class="c-btn " title="당일취소" style="background:#FF6B6B;" onclick="onColorClick(&#39;cancel&#39;)"></button>
-    <span class="c-btn-label" style="margin-right:6px;font-size:9px;color:#666">당일취소</span>
-  
-        </div>
-        <span class="sel-info">환자 행을 클릭해서 선택 후 색상 적용</span>
-      </div>
-      <div class="stats">
-        <div class="stat"><div class="v">27</div><div class="l">전체</div></div>
-        <div class="stat"><div class="v">13</div><div class="l">대기</div></div>
-        <div class="stat" style="border-left:3px solid #FFE500"><div class="v">4</div><div class="l">예약해드림</div></div>
-        <div class="stat" style="border-left:3px solid #B8D4FF"><div class="v">8</div><div class="l">다른날예약</div></div>
-        <div class="stat" style="border-left:3px solid #FFB8B8"><div class="v">0</div><div class="l">이날안됨</div></div>
-        <div class="stat" style="border-left:3px solid #DDD0FF"><div class="v">2</div><div class="l">평일내원</div></div>
-        <div class="stat" style="border-left:3px solid #FF6B6B"><div class="v">0</div><div class="l">당일취소</div></div>
-      </div>
+    <div class="empty">
+      <div class="ico">📅</div>
+      <div class="txt">왼쪽에서 날짜를 선택하세요</div>
     </div>
-    <div class="tbl-scroll">
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr>
-            <th>#</th><th>이름</th><th>차트번호</th>
-            <th>전화번호</th><th>다음예약</th><th>장치</th><th>우선순위</th>
-            <th>내원텀</th>
-            <th>비고</th><th></th>
-          </tr></thead>
-          <tbody id="tbody"><tr class="" onclick="selectRow(0)">
-      <td>1</td>
-      <td class="name-c" style="background:#ffffff">조장하</td>
-      <td class="chart-c" style="background:#ffffff">1912046</td>
-      <td class="phone-c"><a href="tel:010-6729-2852" onclick="event.stopPropagation()">010-6729-2852</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(0)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">4M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(0)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(0)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(0)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(6)">
-      <td>7</td>
-      <td class="name-c" style="background:#ffffff">우현정</td>
-      <td class="chart-c" style="background:#ffffff">2412023</td>
-      <td class="phone-c"><a href="tel:010-8412-1011" onclick="event.stopPropagation()">010-8412-1011</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(6)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">3M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(6)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(6)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(6)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(7)">
-      <td>8</td>
-      <td class="name-c" style="background:#ffffff">지창윤</td>
-      <td class="chart-c" style="background:#ffffff">2405026</td>
-      <td class="phone-c"><a href="tel:010-5005-4624" onclick="event.stopPropagation()">010-5005-4624</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(7)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(7)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(7)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(7)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(12)">
-      <td>13</td>
-      <td class="name-c" style="background:#ffffff">이채윤</td>
-      <td class="chart-c" style="background:#ffffff">2508026</td>
-      <td class="phone-c"><a href="tel:010-4500-0691" onclick="event.stopPropagation()">010-4500-0691</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(12)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c ">이제 평일에 시간을 뺄 수가 없어요</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(12)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(12)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(12)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(16)">
-      <td>17</td>
-      <td class="name-c" style="background:#ffffff">송가빈</td>
-      <td class="chart-c" style="background:#ffffff">2410001</td>
-      <td class="phone-c"><a href="tel:010-8622-1554" onclick="event.stopPropagation()">010-8622-1554</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(16)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(16)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(16)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(16)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(17)">
-      <td>18</td>
-      <td class="name-c" style="background:#ffffff">이민선</td>
-      <td class="chart-c" style="background:#ffffff">2505041</td>
-      <td class="phone-c"><a href="tel:010-5022-8656" onclick="event.stopPropagation()">010-5022-8656</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(17)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(17)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(17)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(17)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(19)">
-      <td>20</td>
-      <td class="name-c" style="background:#ffffff">윤소라</td>
-      <td class="chart-c" style="background:#ffffff">2408013</td>
-      <td class="phone-c"><a href="tel:010-8805-1759" onclick="event.stopPropagation()">010-8805-1759</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(19)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(19)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(19)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(19)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(20)">
-      <td>21</td>
-      <td class="name-c" style="background:#ffffff">박새롬</td>
-      <td class="chart-c" style="background:#ffffff">2401015</td>
-      <td class="phone-c"><a href="tel:010-6881-7164" onclick="event.stopPropagation()">010-6881-7164</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(20)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c ">토요일 넣어줄 사람 진짜 없으면..</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(20)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(20)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(20)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(21)">
-      <td>22</td>
-      <td class="name-c" style="background:#ffffff">권나현</td>
-      <td class="chart-c" style="background:#ffffff">2209018</td>
-      <td class="phone-c"><a href="tel:010-3913-2985" onclick="event.stopPropagation()">010-3913-2985</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(21)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(21)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(21)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(21)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(22)">
-      <td>23</td>
-      <td class="name-c" style="background:#ffffff">정윤애</td>
-      <td class="chart-c" style="background:#ffffff">2509031</td>
-      <td class="phone-c"><a href="tel:010-6625-3091" onclick="event.stopPropagation()">010-6625-3091</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(22)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(22)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(22)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(22)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(23)">
-      <td>24</td>
-      <td class="name-c" style="background:#ffffff">김다은</td>
-      <td class="chart-c" style="background:#ffffff">1812037</td>
-      <td class="phone-c"><a href="tel:010-8529-4825" onclick="event.stopPropagation()">010-8529-4825</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(23)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c ">이제 토요일 밖에 안돼요</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(23)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(23)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(23)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(25)">
-      <td>26</td>
-      <td class="name-c" style="background:#ffffff">김도연</td>
-      <td class="chart-c" style="background:#ffffff">2503002</td>
-      <td class="phone-c"><a href="tel:010-4713-8453" onclick="event.stopPropagation()">010-4713-8453</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(25)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c"></td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(25)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(25)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(25)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(26)">
-      <td>27</td>
-      <td class="name-c" style="background:#ffffff">양연주</td>
-      <td class="chart-c" style="background:#ffffff">1908039</td>
-      <td class="phone-c"><a href="tel:010-4692-5118" onclick="event.stopPropagation()">010-4692-5118</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(26)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c"></td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(26)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(26)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(26)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="divider-row"><td colspan="10">── 예약/처리 완료 ── (이름 더블클릭 → 대기로 되돌리기)</td></tr><tr class="" onclick="selectRow(1)">
-      <td>2</td>
-      <td class="name-c" style="background:#FFE500">김지민</td>
-      <td class="chart-c" style="background:#FFE500">2205020</td>
-      <td class="phone-c"><a href="tel:010-7768-1003" onclick="event.stopPropagation()">010-7768-1003</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(1)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">3M</td>
-      <td class="note-c ">이제 입사해서 당분간 토요일밖에 안됨</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(1)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(1)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(1)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(1)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(2)">
-      <td>3</td>
-      <td class="name-c" style="background:#B8D4FF">안세영</td>
-      <td class="chart-c" style="background:#B8D4FF">2411006</td>
-      <td class="phone-c"><a href="tel:010-5042-6619" onclick="event.stopPropagation()">010-5042-6619</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(2)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">3M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(2)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(2)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(2)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(2)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(3)">
-      <td>4</td>
-      <td class="name-c" style="background:#FFE500">유금주</td>
-      <td class="chart-c" style="background:#FFE500">2306016</td>
-      <td class="phone-c"><a href="tel:010-4620-4959" onclick="event.stopPropagation()">010-4620-4959</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(3)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">3M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(3)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(3)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(3)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(3)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(4)">
-      <td>5</td>
-      <td class="name-c" style="background:#FFE500">이예원</td>
-      <td class="chart-c" style="background:#FFE500">1906037</td>
-      <td class="phone-c"><a href="tel:010-7423-2008" onclick="event.stopPropagation()">010-7423-2008</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(4)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">4M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(4)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(4)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(4)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(4)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(5)">
-      <td>6</td>
-      <td class="name-c" style="background:#B8D4FF">김진형</td>
-      <td class="chart-c" style="background:#B8D4FF">2310010</td>
-      <td class="phone-c"><a href="tel:010-8376-5113" onclick="event.stopPropagation()">010-8376-5113</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(5)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(5)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(5)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(5)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(5)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(8)">
-      <td>9</td>
-      <td class="name-c" style="background:#B8D4FF">김미미</td>
-      <td class="chart-c" style="background:#B8D4FF">2511030</td>
-      <td class="phone-c"><a href="tel:010-9964-4725" onclick="event.stopPropagation()">010-9964-4725</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(8)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(8)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(8)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(8)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(8)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(9)">
-      <td>10</td>
-      <td class="name-c" style="background:#B8D4FF">이민지</td>
-      <td class="chart-c" style="background:#B8D4FF">2506032</td>
-      <td class="phone-c"><a href="tel:010-3121-7280" onclick="event.stopPropagation()">010-3121-7280</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(9)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(9)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(9)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(9)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(9)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(10)">
-      <td>11</td>
-      <td class="name-c" style="background:#B8D4FF">박현석</td>
-      <td class="chart-c" style="background:#B8D4FF">1910038</td>
-      <td class="phone-c"><a href="tel:010-7343-7067" onclick="event.stopPropagation()">010-7343-7067</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(10)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(10)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(10)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(10)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(10)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(11)">
-      <td>12</td>
-      <td class="name-c" style="background:#B8D4FF">이재영</td>
-      <td class="chart-c" style="background:#B8D4FF">2408023</td>
-      <td class="phone-c"><a href="tel:010-6800-3063" onclick="event.stopPropagation()">010-6800-3063</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(11)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">2M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(11)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(11)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(11)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(11)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(13)">
-      <td>14</td>
-      <td class="name-c" style="background:#B8D4FF">조현규</td>
-      <td class="chart-c" style="background:#B8D4FF">2602014</td>
-      <td class="phone-c"><a href="tel:010-3708-5929" onclick="event.stopPropagation()">010-3708-5929</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(13)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c ">평일에 연차내기 어려워서 토요일 원함</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(13)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(13)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(13)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(13)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(14)">
-      <td>15</td>
-      <td class="name-c" style="background:#FFE500">임지현</td>
-      <td class="chart-c" style="background:#FFE500">2602035</td>
-      <td class="phone-c"><a href="tel:010-5244-2034" onclick="event.stopPropagation()">010-5244-2034</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(14)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c ">4/25 취소</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(14)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(14)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(14)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(14)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(15)">
-      <td>16</td>
-      <td class="name-c" style="background:#DDD0FF">은비</td>
-      <td class="chart-c" style="background:#DDD0FF">2001016</td>
-      <td class="phone-c"><a href="tel:010-9228-4586" onclick="event.stopPropagation()">010-9228-4586</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(15)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c ">수요일 OFF</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(15)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(15)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(15)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(15)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(18)">
-      <td>19</td>
-      <td class="name-c" style="background:#B8D4FF">한선하</td>
-      <td class="chart-c" style="background:#B8D4FF">2601004</td>
-      <td class="phone-c"><a href="tel:010-3251-9147" onclick="event.stopPropagation()">010-3251-9147</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(18)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c">1M</td>
-      <td class="note-c "></td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(18)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(18)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(18)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(18)">⚠️취소</button>
-        </div>
-      </td>
-    </tr><tr class="" onclick="selectRow(24)">
-      <td>25</td>
-      <td class="name-c" style="background:#DDD0FF">한수빈</td>
-      <td class="chart-c" style="background:#DDD0FF">2208029</td>
-      <td class="phone-c"><a href="tel:010-4923-5667" onclick="event.stopPropagation()">010-4923-5667</a></td>
-      <td><span class="appt-none">-</span></td>
-      <td>
-        <button class="dev-toggle has" onclick="event.stopPropagation();toggleDevice(24)">
-          장치O
-        </button>
-      </td>
-      <td></td>
-      <td class="turn-c"></td>
-      <td class="note-c ">6/8일 평일로 예약</td>
-      <td>
-        <div class="row-acts" style="opacity:1;gap:3px;flex-wrap:nowrap">
-          <button class="act-btn act-reset" title="대기로 되돌리기" onclick="event.stopPropagation();resetDoneRow(24)">↩대기</button>
-          <button class="act-btn act-edit" title="수정" onclick="event.stopPropagation();openEdit(24)">✏️수정</button>
-          <button class="act-btn act-del" title="삭제" onclick="event.stopPropagation();delPatient(24)">🗑️삭제</button>
-          <button class="act-btn act-cancel" title="당일취소 명단으로" onclick="event.stopPropagation();moveToCancel(24)">⚠️취소</button>
-        </div>
-      </td>
-    </tr></tbody>
-        </table>
-      </div>
-    </div></div>
+  </div>
 
 </div>
 
@@ -1453,7 +524,8 @@ tbody tr:hover .row-acts{opacity:1}
         <div class="form-group">
           <label>이름 *</label>
           <div class="ac-wrap">
-            <input type="text" id="f-name" placeholder="이름 입력" autocomplete="off" oninput="onNameInput(this.value)" onkeydown="onNameKey(event)">
+            <input type="text" id="f-name" placeholder="이름 입력" autocomplete="off"
+              oninput="onNameInput(this.value)" onkeydown="onNameKey(event)">
             <div class="ac-drop hidden" id="ac-drop"></div>
           </div>
         </div>
@@ -1496,13 +568,13 @@ tbody tr:hover .row-acts{opacity:1}
         <div class="form-group">
           <label>내원텀</label>
           <div class="turn-btns" id="turnBtns">
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;&#39;)">없음</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;1M&#39;)">1M</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;2M&#39;)">2M</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;3M&#39;)">3M</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;4M&#39;)">4M</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;6M&#39;)">6M</button>
-            <button type="button" class="turn-btn" onclick="setTurn(&#39;1Y&#39;)">1Y</button>
+            <button type="button" class="turn-btn" onclick="setTurn('')">없음</button>
+            <button type="button" class="turn-btn" onclick="setTurn('1M')">1M</button>
+            <button type="button" class="turn-btn" onclick="setTurn('2M')">2M</button>
+            <button type="button" class="turn-btn" onclick="setTurn('3M')">3M</button>
+            <button type="button" class="turn-btn" onclick="setTurn('4M')">4M</button>
+            <button type="button" class="turn-btn" onclick="setTurn('6M')">6M</button>
+            <button type="button" class="turn-btn" onclick="setTurn('1Y')">1Y</button>
           </div>
           <input type="hidden" id="f-turn">
         </div>
@@ -1531,7 +603,7 @@ tbody tr:hover .row-acts{opacity:1}
       <div class="form-group">
         <label>색상 구분</label>
         <div class="status-grid">
-          <div class="status-opt"><input type="radio" name="st" id="s-normal" value="normal" checked=""><label for="s-normal"><span class="sdot" style="background:#fff;border-color:#ccc"></span>기본</label></div>
+          <div class="status-opt"><input type="radio" name="st" id="s-normal" value="normal" checked><label for="s-normal"><span class="sdot" style="background:#fff;border-color:#ccc"></span>기본</label></div>
           <div class="status-opt"><input type="radio" name="st" id="s-scheduled" value="scheduled"><label for="s-scheduled"><span class="sdot" style="background:var(--c-scheduled)"></span>예약해드림</label></div>
           <div class="status-opt"><input type="radio" name="st" id="s-regular" value="regular"><label for="s-regular"><span class="sdot" style="background:var(--c-regular)"></span>잘오는사람</label></div>
           <div class="status-opt"><input type="radio" name="st" id="s-other_day" value="other_day"><label for="s-other_day"><span class="sdot" style="background:var(--c-other)"></span>다른날예약</label></div>
@@ -1574,8 +646,8 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
     <div class="modal-body">
       <div class="tab-btns">
-        <button class="tab-btn on" id="tab-single" onclick="switchTab(&#39;single&#39;)">📅 날짜 1개</button>
-        <button class="tab-btn" id="tab-month" onclick="switchTab(&#39;month&#39;)">📆 달 전체 추가</button>
+        <button class="tab-btn on" id="tab-single" onclick="switchTab('single')">📅 날짜 1개</button>
+        <button class="tab-btn" id="tab-month" onclick="switchTab('month')">📆 달 전체 추가</button>
       </div>
       <div id="panel-single">
         <div class="form-group">
@@ -2480,6 +1552,5 @@ window._onFbReady = function() {
   if(first) selectDate(first.date_str);
 };
 </script>
-
-
-</body></html>
+</body>
+</html>
